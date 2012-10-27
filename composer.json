@@ -1,0 +1,26 @@
+{
+    "name": "roundcube/plugin-installer",
+    "description": "A composer-installer for RoundCube plugins.",
+    "type": "composer-installer",
+    "license": "BSD-3-Clause",
+    "author": [
+        {
+            "name": "Till Klampaeckel",
+            "email": "till@php.net"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "RoundCube\\Composer": "src/"
+        }
+    },
+    "extra": {
+        "class": "EasyBib\\Composer\\PluginInstaller"
+    },
+    "require": {
+        "php": ">=5.3.0"
+    },
+    "require-dev": {
+        "composer/composer": "*"
+    }
+}

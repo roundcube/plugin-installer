@@ -3,7 +3,7 @@
     "description": "A composer-installer for RoundCube plugins.",
     "type": "composer-installer",
     "license": "BSD-3-Clause",
-    "author": [
+    "authors": [
         {
             "name": "Till Klampaeckel",
             "email": "till@php.net"

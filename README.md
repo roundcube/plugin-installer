@@ -9,6 +9,8 @@ This installer ensures that plugins end up in the correct directory:
  * create a `composer.json` file in your plugin's repository
  * add the following contents
 
+### sample composer.json for plugins
+
     {
         "name": "yourprefix/plugin-name",
         "license": "the license",

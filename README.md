@@ -1,8 +1,8 @@
-# Plugin Installer for RoundCube
+# Plugin Installer for Roundcube
 
 This installer ensures that plugins end up in the correct directory:
 
- * `roundcube/plugins/plugin-name`
+ * `<roundcube-root>/plugins/plugin-name`
 
 ## Minimum setup
 
@@ -12,10 +12,16 @@ This installer ensures that plugins end up in the correct directory:
 ### sample composer.json for plugins
 
     {
-        "name": "yourprefix/plugin-name",
+        "name": "yourvendor/plugin-name",
         "license": "the license",
         "description": "tell the world what your plugin is good at",
         "type": "roundcube-plugin",
+        "authors": [
+            {
+                "name": "<your-name>",
+                "email": "<your-email>"
+            }
+        ],
         "repositories": [
             {
                 "type": "composer",
@@ -28,9 +34,13 @@ This installer ensures that plugins end up in the correct directory:
         "minimum-stability": "dev-master"
     }
 
+  * Submit your plugin to [plugins.roundcube.net](http://plugins.roundcube.net).
+
 ## Installation
 
- * clone RoundCube
+ * clone Roundcube
  * `cp composer.json-dist composer.json`
  * add your plugin in `require`
  * `composer.phar install`
+
+Read the whole story at [plugins.roundcube.net](http://plugins.roundcube.net/about).

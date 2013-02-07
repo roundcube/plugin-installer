@@ -1,5 +1,5 @@
 <?php
-namespace RoundCube\Composer;
+namespace Roundcube\Composer;
 
 use \Composer\Installer\LibraryInstaller;
 use \Composer\Package\Version\VersionParser;
@@ -37,20 +37,44 @@ class PluginInstaller extends LibraryInstaller
     /**
      * {@inheritDoc}
      */
-     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
-     {
-         $this->rcubeVersionCheck($package);
-         parent::install($repo, $package);
-     }
+    public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
+    {
+        $this->rcubeVersionCheck($package);
+        parent::install($repo, $package);
 
-     /**
-      * {@inheritDoc}
-      */
-     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
-     {
-         $this->rcubeVersionCheck($target);
-         parent::update($repo, $initial, $target);
-     }
+        // post-install: activate plugin in Roundcube config
+        $config_file = $this->rcubeConfigFile();
+
+        if (is_writeable($config_file) && php_sapi_name() == 'cli') {
+            @list($vendor, $plugin_name) = explode('/', $package->getPrettyName());
+            echo "Do you want to activate the plugin $plugin_name? [N|y]\n";
+            $answer = trim(fgets(STDIN));
+            if (strtolower($answer) == 'y' || strtolower($answer) == 'yes') {
+                $this->rcubeAlterConfig($plugin_name, true);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
+    {
+        $this->rcubeVersionCheck($target);
+        parent::update($repo, $initial, $target);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
+    {
+        parent::uninstall($repo, $package);
+
+        // post-uninstall: deactivate plugin
+        @list($vendor, $plugin_name) = explode('/', $package->getPrettyName());
+        $this->rcubeAlterConfig($plugin_name, false);
+    }
 
     /**
      * {@inheritDoc}
@@ -105,5 +129,49 @@ class PluginInstaller extends LibraryInstaller
                 }
             }
         }
+    }
+
+    /**
+     * Add or remove the given plugin to the list of active plugins in the Roundcube config.
+     */
+    private function rcubeAlterConfig($plugin_name, $add)
+    {
+        $config_file = $this->rcubeConfigFile();
+        @include($config_file);
+        $success = false;
+
+        if (is_array($rcmail_config) && is_writeable($config_file)) {
+            $config_templ = @file_get_contents($config_file);
+            $active_plugins = (array)$rcmail_config['plugins'];
+            if ($add && !in_array($plugin_name, $active_plugins)) {
+                $active_plugins[] = $plugin_name;
+            }
+            else if (!$add && ($i = array_search($plugin_name, $active_plugins)) !== false) {
+                unset($active_plugins[$i]);
+            }
+
+            if ($active_plugins != $rcmail_config['plugins']) {
+                $var_export = "array(\n\t'" . join("',\n\t'", $active_plugins) . "',\n);";
+                $new_config = preg_replace(
+                    '/(\$rcmail_config\[\'plugins\'\])\s+=\s+(.+);/Uimse',
+                    "'\\1 = ' . \$var_export",
+                    $config_templ);
+                $success = file_put_contents($config_file, $new_config);
+            }
+        }
+
+        if ($success && php_sapi_name() == 'cli') {
+            echo "Updated local config at $config_file\n";
+        }
+
+        return $success;
+    }
+
+    /**
+     * Helper method to get an absolute path to the local Roundcube config file
+     */
+    private function rcubeConfigFile()
+    {
+        return realpath(getcwd() . '/config/main.inc.php');
     }
 }

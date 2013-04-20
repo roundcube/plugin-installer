@@ -40,7 +40,7 @@ This installer ensures that plugins end up in the correct directory:
 
  * clone Roundcube
  * `cp composer.json-dist composer.json`
- * add your plugin in `require`
+ * add your plugin in the `require` section of composer.json
  * `composer.phar install`
 
 Read the whole story at [plugins.roundcube.net](http://plugins.roundcube.net/about).

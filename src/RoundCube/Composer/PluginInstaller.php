@@ -12,7 +12,7 @@ use \Composer\Repository\InstalledRepositoryInterface;
  * @package  PluginInstaller
  * @author   Till Klampaeckel <till@php.net>
  * @author   Thomas Bruederli <thomas@roundcube.net>
- * @license  New BSD Licnese
+ * @license  GPLv3+
  * @version  GIT: <git_id>
  * @link     http://github.com/roundcube/plugin-installer
  */

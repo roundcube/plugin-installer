@@ -6,6 +6,7 @@ use \Composer\Package\Version\VersionParser;
 use \Composer\Package\LinkConstraint\VersionConstraint;
 use \Composer\Package\PackageInterface;
 use \Composer\Repository\InstalledRepositoryInterface;
+use \Composer\Util\ProcessExecutor;
 
 /**
  * @category Plugins
@@ -53,6 +54,19 @@ class PluginInstaller extends LibraryInstaller
                 $this->rcubeAlterConfig($plugin_name, true);
             }
         }
+
+        // initialize database schema
+        if (!empty($extra['roundcube']['sql-dir'])) {
+            if ($sqldir = realpath($this->getVendorDir() . "/$plugin_name/" . $extra['roundcube']['sql_schema'])) {
+                system(getcwd() . "/vendor/bin/rcubeinitdb.sh --package=$plugin_name --dir=$sqldir");
+            }
+        }
+
+        // run post-install script
+        $extra = $package->getExtra();
+        if (!empty($extra['roundcube']['post-install-script'])) {
+            $this->rcubeRunScript($extra['roundcube']['post-install-script'], $package);
+        }
     }
 
     /**
@@ -62,6 +76,20 @@ class PluginInstaller extends LibraryInstaller
     {
         $this->rcubeVersionCheck($target);
         parent::update($repo, $initial, $target);
+
+        // trigger updatedb.sh
+        if (!empty($extra['roundcube']['sql-dir'])) {
+            @list($vendor, $plugin_name) = explode('/', $target->getPrettyName());
+            if ($sqldir = realpath($this->getVendorDir() . "/$plugin_name/" . $extra['roundcube']['sql_schema'])) {
+                system(getcwd() . "/bin/updatedb.sh --package=$plugin_name --dir=$sqldir", $res);
+            }
+        }
+
+        // run post-update script
+        $extra = $target->getExtra();
+        if (!empty($extra['roundcube']['post-update-script'])) {
+            $this->rcubeRunScript($extra['roundcube']['post-update-script'], $target);
+        }
     }
 
     /**
@@ -74,6 +102,12 @@ class PluginInstaller extends LibraryInstaller
         // post-uninstall: deactivate plugin
         @list($vendor, $plugin_name) = explode('/', $package->getPrettyName());
         $this->rcubeAlterConfig($plugin_name, false);
+
+        // run post-uninstall script
+        $extra = $package->getExtra();
+        if (!empty($extra['roundcube']['post-uninstall-script'])) {
+            $this->rcubeRunScript($extra['roundcube']['post-uninstall-script'], $package);
+        }
     }
 
     /**
@@ -139,10 +173,16 @@ class PluginInstaller extends LibraryInstaller
         $config_file = $this->rcubeConfigFile();
         @include($config_file);
         $success = false;
+        $varname = '$config';
 
-        if (is_array($rcmail_config) && is_writeable($config_file)) {
+        if (!empty($rcmail_config)) {
+            $config = $rcmail_config;
+            $varname = '$rcmail_config';
+        }
+
+        if (is_array($config) && is_writeable($config_file)) {
             $config_templ = @file_get_contents($config_file);
-            $active_plugins = (array)$rcmail_config['plugins'];
+            $active_plugins = (array)$config['plugins'];
             if ($add && !in_array($plugin_name, $active_plugins)) {
                 $active_plugins[] = $plugin_name;
             }
@@ -150,11 +190,11 @@ class PluginInstaller extends LibraryInstaller
                 unset($active_plugins[$i]);
             }
 
-            if ($active_plugins != $rcmail_config['plugins']) {
+            if ($active_plugins != $config['plugins']) {
                 $var_export = "array(\n\t'" . join("',\n\t'", $active_plugins) . "',\n);";
                 $new_config = preg_replace(
-                    '/(\$rcmail_config\[\'plugins\'\])\s+=\s+(.+);/Uimse',
-                    "'\\1 = ' . \$var_export",
+                    "/($varname\['plugins'\])\s+=\s+(.+);/Uims",
+                    "\\1 = " . $var_export,
                     $config_templ);
                 $success = file_put_contents($config_file, $new_config);
             }
@@ -172,6 +212,33 @@ class PluginInstaller extends LibraryInstaller
      */
     private function rcubeConfigFile()
     {
-        return realpath(getcwd() . '/config/main.inc.php');
+        return realpath(getcwd() . '/config/config.inc.php');
+    }
+
+    /**
+     * Run the given script file
+     */
+    private function rcubeRunScript($script, PackageInterface $package)
+    {
+        @list($vendor, $plugin_name) = explode('/', $package->getPrettyName());
+
+        // run executable shell script
+        if (($scriptfile = realpath($this->getVendorDir() . "/$plugin_name/$script")) && is_executable($scriptfile)) {
+            system($scriptfile, $res);
+        }
+        // run PHP script in Roundcube context
+        else if ($scriptfile && preg_match('/\.php$/', $scriptfile)) {
+            $incdir = realpath(getcwd() . '/program/include');
+            include_once($incdir . '/iniset.php');
+            include($scriptfile);
+        }
+        // attempt to execute the given string as shell commands
+        else {
+            $process = new ProcessExecutor();
+            $exitCode = $process->execute($script);
+            if ($exitCode !== 0) {
+                throw new \RuntimeException('Error executing script: '. $process->getErrorOutput(), $exitCode);
+            }
+        }
     }
 }

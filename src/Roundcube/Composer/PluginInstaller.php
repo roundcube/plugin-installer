@@ -25,14 +25,11 @@ class PluginInstaller extends LibraryInstaller
     public function getInstallPath(PackageInterface $package)
     {
         static $vendorDir;
-        if (null === $vendorDir) {
+        if ($vendorDir === null) {
             $vendorDir = $this->getVendorDir();
         }
 
-        $name = $package->getName();
-        list($vendor, $pluginName) = explode('/', $name);
-
-        return sprintf('%s/%s', $vendorDir, $pluginName);
+        return sprintf('%s/%s', $vendorDir, $this->getPluginName($package));
     }
 
     /**
@@ -47,7 +44,7 @@ class PluginInstaller extends LibraryInstaller
         $config_file = $this->rcubeConfigFile();
 
         if (is_writeable($config_file) && php_sapi_name() == 'cli') {
-            @list($vendor, $plugin_name) = explode('/', $package->getPrettyName());
+            $plugin_name = $this->getPluginName($package);
             echo "Do you want to activate the plugin $plugin_name? [N|y]\n";
             $answer = trim(fgets(STDIN));
             if (strtolower($answer) == 'y' || strtolower($answer) == 'yes') {
@@ -79,7 +76,7 @@ class PluginInstaller extends LibraryInstaller
 
         // trigger updatedb.sh
         if (!empty($extra['roundcube']['sql-dir'])) {
-            @list($vendor, $plugin_name) = explode('/', $target->getPrettyName());
+            $plugin_name = $this->getPluginName($target);
             if ($sqldir = realpath($this->getVendorDir() . "/$plugin_name/" . $extra['roundcube']['sql_schema'])) {
                 system(getcwd() . "/bin/updatedb.sh --package=$plugin_name --dir=$sqldir", $res);
             }
@@ -100,7 +97,7 @@ class PluginInstaller extends LibraryInstaller
         parent::uninstall($repo, $package);
 
         // post-uninstall: deactivate plugin
-        @list($vendor, $plugin_name) = explode('/', $package->getPrettyName());
+        $plugin_name = $this->getPluginName($package);
         $this->rcubeAlterConfig($plugin_name, false);
 
         // run post-uninstall script
@@ -130,6 +127,15 @@ class PluginInstaller extends LibraryInstaller
         $pluginDir .= '/plugins';
 
         return $pluginDir;
+    }
+
+    /**
+     * Extract the (valid) plugin name from the package object
+     */
+    private function getPluginName(PackageInterface $package)
+    {
+        @list($vendor, $pluginName) = explode('/', $package->getPrettyName());
+        return strtr($pluginName, '-', '_');
     }
 
     /**
@@ -175,7 +181,7 @@ class PluginInstaller extends LibraryInstaller
         $success = false;
         $varname = '$config';
 
-        if (!empty($rcmail_config)) {
+        if (empty($config) && !empty($rcmail_config)) {
             $config = $rcmail_config;
             $varname = '$rcmail_config';
         }

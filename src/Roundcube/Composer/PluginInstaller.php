@@ -1,12 +1,13 @@
 <?php
+
 namespace Roundcube\Composer;
 
-use \Composer\Installer\LibraryInstaller;
-use \Composer\Package\Version\VersionParser;
-use \Composer\Package\LinkConstraint\VersionConstraint;
-use \Composer\Package\PackageInterface;
-use \Composer\Repository\InstalledRepositoryInterface;
-use \Composer\Util\ProcessExecutor;
+use Composer\Installer\LibraryInstaller;
+use Composer\Package\Version\VersionParser;
+use Composer\Package\LinkConstraint\VersionConstraint;
+use Composer\Package\PackageInterface;
+use Composer\Repository\InstalledRepositoryInterface;
+use Composer\Util\ProcessExecutor;
 
 /**
  * @category Plugins
@@ -19,6 +20,8 @@ use \Composer\Util\ProcessExecutor;
  */
 class PluginInstaller extends LibraryInstaller
 {
+    const INSTALLER_TYPE = 'roundcube-plugin';
+
     /**
      * {@inheritDoc}
      */
@@ -45,9 +48,8 @@ class PluginInstaller extends LibraryInstaller
 
         if (is_writeable($config_file) && php_sapi_name() == 'cli') {
             $plugin_name = $this->getPluginName($package);
-            echo "Do you want to activate the plugin $plugin_name? [N|y]\n";
-            $answer = trim(fgets(STDIN));
-            if (strtolower($answer) == 'y' || strtolower($answer) == 'yes') {
+            $answer = $this->io->askConfirmation("Do you want to activate the plugin $plugin_name? [N|y] ", false);
+            if (true === $answer) {
                 $this->rcubeAlterConfig($plugin_name, true);
             }
         }
@@ -112,7 +114,7 @@ class PluginInstaller extends LibraryInstaller
      */
     public function supports($packageType)
     {
-        return 'roundcube-plugin' === $packageType;
+        return $packageType === self::INSTALLER_TYPE;
     }
 
     /**
@@ -135,6 +137,7 @@ class PluginInstaller extends LibraryInstaller
     private function getPluginName(PackageInterface $package)
     {
         @list($vendor, $pluginName) = explode('/', $package->getPrettyName());
+
         return strtr($pluginName, '-', '_');
     }
 
@@ -151,8 +154,7 @@ class PluginInstaller extends LibraryInstaller
         $iniset = @file_get_contents($rootdir . '/program/include/iniset.php');
         if (preg_match('/define\(.RCMAIL_VERSION.,\s*.([0-9.]+[a-z-]*)?/', $iniset, $m)) {
             $rcubeVersion = $parser->normalize(str_replace('-git', '.999', $m[1]));
-        }
-        else {
+        } else {
             throw new \Exception("Unable to find a Roundcube installation in $rootdir");
         }
 
@@ -188,11 +190,10 @@ class PluginInstaller extends LibraryInstaller
 
         if (is_array($config) && is_writeable($config_file)) {
             $config_templ = @file_get_contents($config_file);
-            $active_plugins = (array)$config['plugins'];
+            $active_plugins = (array) $config['plugins'];
             if ($add && !in_array($plugin_name, $active_plugins)) {
                 $active_plugins[] = $plugin_name;
-            }
-            else if (!$add && ($i = array_search($plugin_name, $active_plugins)) !== false) {
+            } elseif (!$add && ($i = array_search($plugin_name, $active_plugins)) !== false) {
                 unset($active_plugins[$i]);
             }
 
@@ -207,7 +208,7 @@ class PluginInstaller extends LibraryInstaller
         }
 
         if ($success && php_sapi_name() == 'cli') {
-            echo "Updated local config at $config_file\n";
+            $this->io->write("<info>Updated local config at $config_file</info>");
         }
 
         return $success;

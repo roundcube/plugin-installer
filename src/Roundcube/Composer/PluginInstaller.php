@@ -161,7 +161,7 @@ class PluginInstaller extends LibraryInstaller
         if (!empty($extra['roundcube'])) {
             foreach (array('min-version' => '>=', 'max-version' => '<=') as $key => $operator) {
                 if (!empty($extra['roundcube'][$key])) {
-                    $version = $parser->normalize($extra['roundcube'][$key]);
+                    $version = $parser->normalize(str_replace('-git', '.999', $extra['roundcube'][$key]));
                     $constraint = new VersionConstraint($version, $operator);
                     if (!$constraint->versionCompare($rcubeVersion, $version, $operator)) {
                         throw new \Exception("Version check failed! " . $package->getName() . " requires Roundcube version $operator $version, $rcubeVersion was detected.");

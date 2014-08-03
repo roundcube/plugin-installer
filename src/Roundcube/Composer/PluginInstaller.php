@@ -200,7 +200,7 @@ class PluginInstaller extends LibraryInstaller
             if ($active_plugins != $config['plugins']) {
                 $var_export = "array(\n\t'" . join("',\n\t'", $active_plugins) . "',\n);";
                 $new_config = preg_replace(
-                    "/($varname\['plugins'\])\s+=\s+(.+);/Uims",
+                    "/(\\$varname\['plugins'\])\s+=\s+(.+);/Uims",
                     "\\1 = " . $var_export,
                     $config_templ);
                 $success = file_put_contents($config_file, $new_config);

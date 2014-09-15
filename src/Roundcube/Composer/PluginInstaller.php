@@ -56,7 +56,7 @@ class PluginInstaller extends LibraryInstaller
 
         // initialize database schema
         if (!empty($extra['roundcube']['sql-dir'])) {
-            if ($sqldir = realpath($this->getVendorDir() . "/$plugin_name/" . $extra['roundcube']['sql_schema'])) {
+            if ($sqldir = realpath($this->getVendorDir() . "/$plugin_name/" . $extra['roundcube']['sql-dir'])) {
                 system(getcwd() . "/vendor/bin/rcubeinitdb.sh --package=$plugin_name --dir=$sqldir");
             }
         }
@@ -79,7 +79,7 @@ class PluginInstaller extends LibraryInstaller
         // trigger updatedb.sh
         if (!empty($extra['roundcube']['sql-dir'])) {
             $plugin_name = $this->getPluginName($target);
-            if ($sqldir = realpath($this->getVendorDir() . "/$plugin_name/" . $extra['roundcube']['sql_schema'])) {
+            if ($sqldir = realpath($this->getVendorDir() . "/$plugin_name/" . $extra['roundcube']['sql-dir'])) {
                 system(getcwd() . "/bin/updatedb.sh --package=$plugin_name --dir=$sqldir", $res);
             }
         }

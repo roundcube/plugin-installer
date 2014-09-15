@@ -45,6 +45,7 @@ class PluginInstaller extends LibraryInstaller
 
         // post-install: activate plugin in Roundcube config
         $config_file = $this->rcubeConfigFile();
+        $extra = $package->getExtra();
 
         if (is_writeable($config_file) && php_sapi_name() == 'cli') {
             $plugin_name = $this->getPluginName($package);
@@ -62,7 +63,6 @@ class PluginInstaller extends LibraryInstaller
         }
 
         // run post-install script
-        $extra = $package->getExtra();
         if (!empty($extra['roundcube']['post-install-script'])) {
             $this->rcubeRunScript($extra['roundcube']['post-install-script'], $package);
         }
@@ -76,6 +76,8 @@ class PluginInstaller extends LibraryInstaller
         $this->rcubeVersionCheck($target);
         parent::update($repo, $initial, $target);
 
+        $extra = $target->getExtra();
+
         // trigger updatedb.sh
         if (!empty($extra['roundcube']['sql-dir'])) {
             $plugin_name = $this->getPluginName($target);
@@ -85,7 +87,6 @@ class PluginInstaller extends LibraryInstaller
         }
 
         // run post-update script
-        $extra = $target->getExtra();
         if (!empty($extra['roundcube']['post-update-script'])) {
             $this->rcubeRunScript($extra['roundcube']['post-update-script'], $target);
         }

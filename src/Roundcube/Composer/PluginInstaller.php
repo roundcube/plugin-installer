@@ -45,6 +45,8 @@ class PluginInstaller extends LibraryInstaller
 
         // post-install: activate plugin in Roundcube config
         $config_file = $this->rcubeConfigFile();
+        $plugin_name = $this->getPluginName($package);
+        $plugin_dir = $this->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
         $extra = $package->getExtra();
         $plugin_name = $this->getPluginName($package);
 
@@ -55,9 +57,16 @@ class PluginInstaller extends LibraryInstaller
             }
         }
 
+        // copy config.inc.php.dist -> config.inc.php
+        if (is_file($plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist') && !is_file($plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php') && is_writeable($plugin_dir)) {
+            $this->io->write("<info>Creating plugin config file</info>");
+            copy($plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist', $plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php');
+        }
+
         // initialize database schema
         if (!empty($extra['roundcube']['sql-dir'])) {
-            if ($sqldir = realpath($this->getVendorDir() . "/$plugin_name/" . $extra['roundcube']['sql-dir'])) {
+            if ($sqldir = realpath($plugin_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
+                $this->io->write("<info>Running database initialization script for $plugin_name</info>");
                 system(getcwd() . "/vendor/bin/rcubeinitdb.sh --package=$plugin_name --dir=$sqldir");
             }
         }
@@ -81,7 +90,10 @@ class PluginInstaller extends LibraryInstaller
         // trigger updatedb.sh
         if (!empty($extra['roundcube']['sql-dir'])) {
             $plugin_name = $this->getPluginName($target);
-            if ($sqldir = realpath($this->getVendorDir() . "/$plugin_name/" . $extra['roundcube']['sql-dir'])) {
+            $plugin_dir = $this->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
+
+            if ($sqldir = realpath($plugin_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
+                $this->io->write("<info>Updating database schema for $plugin_name</info>");
                 system(getcwd() . "/bin/updatedb.sh --package=$plugin_name --dir=$sqldir", $res);
             }
         }
@@ -242,22 +254,24 @@ class PluginInstaller extends LibraryInstaller
      */
     private function rcubeRunScript($script, PackageInterface $package)
     {
-        @list($vendor, $plugin_name) = explode('/', $package->getPrettyName());
+        $plugin_name = $this->getPluginName($package);
+        $plugin_dir = $this->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
 
-        // run executable shell script
-        if (($scriptfile = realpath($this->getVendorDir() . "/$plugin_name/$script")) && is_executable($scriptfile)) {
-            system($scriptfile, $res);
+        // check for executable shell script
+        if (($scriptfile = realpath($plugin_dir . DIRECTORY_SEPARATOR . $script)) && is_executable($scriptfile)) {
+            $script = $scriptfile;
         }
+
         // run PHP script in Roundcube context
-        else if ($scriptfile && preg_match('/\.php$/', $scriptfile)) {
+        if ($scriptfile && preg_match('/\.php$/', $scriptfile)) {
             $incdir = realpath(getcwd() . '/program/include');
             include_once($incdir . '/iniset.php');
             include($scriptfile);
         }
         // attempt to execute the given string as shell commands
         else {
-            $process = new ProcessExecutor();
-            $exitCode = $process->execute($script);
+            $process = new ProcessExecutor($this->io);
+            $exitCode = $process->execute($script, null, $plugin_dir);
             if ($exitCode !== 0) {
                 throw new \RuntimeException('Error executing script: '. $process->getErrorOutput(), $exitCode);
             }

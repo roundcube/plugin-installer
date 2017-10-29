@@ -4,7 +4,7 @@ namespace Roundcube\Composer;
 
 use Composer\Installer\LibraryInstaller;
 use Composer\Package\Version\VersionParser;
-use Composer\Package\LinkConstraint\VersionConstraint;
+use Composer\Semver\Constraint\Constraint;
 use Composer\Package\PackageInterface;
 use Composer\Repository\InstalledRepositoryInterface;
 use Composer\Util\ProcessExecutor;
@@ -177,7 +177,7 @@ class PluginInstaller extends LibraryInstaller
             foreach (array('min-version' => '>=', 'max-version' => '<=') as $key => $operator) {
                 if (!empty($extra['roundcube'][$key])) {
                     $version = $parser->normalize(str_replace('-git', '.999', $extra['roundcube'][$key]));
-                    $constraint = new VersionConstraint($operator, $version);
+                    $constraint = new Constraint($operator, $version);
                     if (!$constraint->versionCompare($rcubeVersion, $version, $operator)) {
                         throw new \Exception("Version check failed! " . $package->getName() . " requires Roundcube version $operator $version, $rcubeVersion was detected.");
                     }

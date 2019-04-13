@@ -4,7 +4,6 @@ namespace Roundcube\Composer;
 
 use Composer\Installer\LibraryInstaller;
 use Composer\Package\Version\VersionParser;
-use Composer\Semver\Constraint\Constraint;
 use Composer\Package\PackageInterface;
 use Composer\Repository\InstalledRepositoryInterface;
 use Composer\Util\ProcessExecutor;
@@ -177,8 +176,7 @@ class PluginInstaller extends LibraryInstaller
             foreach (array('min-version' => '>=', 'max-version' => '<=') as $key => $operator) {
                 if (!empty($extra['roundcube'][$key])) {
                     $version = $parser->normalize(str_replace('-git', '.999', $extra['roundcube'][$key]));
-                    $constraint = new Constraint($operator, $version);
-                    if (!$constraint->versionCompare($rcubeVersion, $version, $operator)) {
+                    if (!self::versionCompare($rcubeVersion, $version, $operator)) {
                         throw new \Exception("Version check failed! " . $package->getName() . " requires Roundcube version $operator $version, $rcubeVersion was detected.");
                     }
                 }
@@ -276,5 +274,25 @@ class PluginInstaller extends LibraryInstaller
                 throw new \RuntimeException('Error executing script: '. $process->getErrorOutput(), $exitCode);
             }
         }
+    }
+
+    /**
+     * version_compare() wrapper, originally from composer/semver
+     */
+    private static function versionCompare($a, $b, $operator, $compareBranches = false)
+    {
+        $aIsBranch = 'dev-' === substr($a, 0, 4);
+        $bIsBranch = 'dev-' === substr($b, 0, 4);
+
+        if ($aIsBranch && $bIsBranch) {
+            return $operator === '==' && $a === $b;
+        }
+
+        // when branches are not comparable, we make sure dev branches never match anything
+        if (!$compareBranches && ($aIsBranch || $bIsBranch)) {
+            return false;
+        }
+
+        return version_compare($a, $b, $operator);
     }
 }

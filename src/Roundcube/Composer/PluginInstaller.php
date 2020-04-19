@@ -38,6 +38,10 @@ class PluginInstaller extends LibraryInstaller
      */
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
+        // initialize Roundcube environment
+        define('INSTALL_PATH', getcwd() . '/');
+        include_once(INSTALL_PATH . 'program/include/clisetup.php');
+
         $this->rcubeVersionCheck($package);
         parent::install($repo, $package);
 
@@ -58,9 +62,21 @@ class PluginInstaller extends LibraryInstaller
         }
 
         // copy config.inc.php.dist -> config.inc.php
-        if (is_file($package_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist') && !is_file($package_dir . DIRECTORY_SEPARATOR . 'config.inc.php') && is_writeable($package_dir)) {
-            $this->io->write("<info>Creating package config file</info>");
-            copy($package_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist', $package_dir . DIRECTORY_SEPARATOR . 'config.inc.php');
+        if (is_file($package_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist')) {
+            $config_exists   = false;
+            $alt_config_file = $this->rcubeConfigFile($package_name . '.inc.php');
+
+            if (is_file($package_dir . DIRECTORY_SEPARATOR . 'config.inc.php')) {
+                $config_exists = true;
+            }
+            elseif (is_file($alt_config_file)) {
+                $config_exists = true;
+            }
+
+            if (!$config_exists && is_writeable($package_dir)) {
+                $this->io->write("<info>Creating package config file</info>");
+                copy($package_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist', $package_dir . DIRECTORY_SEPARATOR . 'config.inc.php');
+            }
         }
 
         // initialize database schema
@@ -110,11 +126,16 @@ class PluginInstaller extends LibraryInstaller
      */
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
+        // initialize Roundcube environment
+        define('INSTALL_PATH', getcwd() . '/');
+        include_once(INSTALL_PATH . 'program/include/clisetup.php');
+
         parent::uninstall($repo, $package);
 
         // post-uninstall: deactivate package
         $package_name = $this->getPackageName($package);
         $package_type = $package->getType();
+
         $this->rcubeAlterConfig($package_name, false, $package_type);
 
         // run post-uninstall script
@@ -273,9 +294,20 @@ class PluginInstaller extends LibraryInstaller
     /**
      * Helper method to get an absolute path to the local Roundcube config file
      */
-    private function rcubeConfigFile()
+    private function rcubeConfigFile($file = 'config.inc.php')
     {
-        return realpath(getcwd() . '/config/config.inc.php');
+        $config = new \rcube_config();
+        $paths  = $config->resolve_paths($file);
+        $path   = getcwd() . '/config/' . $file;
+
+        foreach ($paths as $fpath) {
+            if ($fpath && is_file($fpath) && is_readable($fpath)) {
+                $path = $fpath;
+                break;
+            }
+        }
+
+        return realpath($path);
     }
 
     /**

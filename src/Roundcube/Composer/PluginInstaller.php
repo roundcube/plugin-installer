@@ -83,7 +83,14 @@ class PluginInstaller extends LibraryInstaller
         if (!empty($extra['roundcube']['sql-dir'])) {
             if ($sqldir = realpath($package_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                 $this->io->write("<info>Running database initialization script for $package_name</info>");
-                system(getcwd() . "/vendor/bin/rcubeinitdb.sh --package=$package_name --dir=$sqldir");
+
+                $roundcube_version = self::versionNormalize(RCMAIL_VERSION);
+                if (self::versionCompare($roundcube_version, '1.2.0', '>=')) {
+                    \rcmail_utils::db_init($sqldir);
+                }
+                else {
+                    throw new \Exception("Database initialization failed. Roundcube 1.2.0 or above required.");
+                }
             }
         }
 
@@ -98,12 +105,16 @@ class PluginInstaller extends LibraryInstaller
      */
     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
     {
+        // initialize Roundcube environment
+        define('INSTALL_PATH', getcwd() . '/');
+        include_once(INSTALL_PATH . 'program/include/clisetup.php');
+
         $this->rcubeVersionCheck($target);
         parent::update($repo, $initial, $target);
 
         $extra = $target->getExtra();
 
-        // trigger updatedb.sh
+        // update database schema
         if (!empty($extra['roundcube']['sql-dir'])) {
             $package_name = $this->getPackageName($target);
             $package_type = $target->getType();
@@ -111,7 +122,14 @@ class PluginInstaller extends LibraryInstaller
 
             if ($sqldir = realpath($package_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                 $this->io->write("<info>Updating database schema for $package_name</info>");
-                system(getcwd() . "/bin/updatedb.sh --package=$package_name --dir=$sqldir", $res);
+
+                $roundcube_version = self::versionNormalize(RCMAIL_VERSION);
+                if (self::versionCompare($roundcube_version, '1.2.0', '>=')) {
+                    \rcmail_utils::db_update($sqldir, $package_name);
+                }
+                else {
+                    throw new \Exception("Database update failed. Roundcube 1.2.0 or above required.");
+                }
             }
         }
 
@@ -184,14 +202,10 @@ class PluginInstaller extends LibraryInstaller
      */
     private function rcubeVersionCheck($package)
     {
-        $parser = new VersionParser;
-
         // read rcube version from iniset
-        $rootdir = getcwd();
-        $iniset = @file_get_contents($rootdir . '/program/include/iniset.php');
-        if (preg_match('/define\(.RCMAIL_VERSION.,\s*.([0-9.]+[a-z-]*)?/', $iniset, $m)) {
-            $rcubeVersion = $parser->normalize(str_replace('-git', '.999', $m[1]));
-        } else {
+        $rcubeVersion = self::versionNormalize(RCMAIL_VERSION);
+
+        if (empty($rcubeVersion)) {
             throw new \Exception("Unable to find a Roundcube installation in $rootdir");
         }
 
@@ -200,7 +214,7 @@ class PluginInstaller extends LibraryInstaller
         if (!empty($extra['roundcube'])) {
             foreach (array('min-version' => '>=', 'max-version' => '<=') as $key => $operator) {
                 if (!empty($extra['roundcube'][$key])) {
-                    $version = $parser->normalize(str_replace('-git', '.999', $extra['roundcube'][$key]));
+                    $version = self::versionNormalize($extra['roundcube'][$key]);
                     if (!self::versionCompare($rcubeVersion, $version, $operator)) {
                         throw new \Exception("Version check failed! " . $package->getName() . " requires Roundcube version $operator $version, $rcubeVersion was detected.");
                     }
@@ -338,6 +352,16 @@ class PluginInstaller extends LibraryInstaller
                 throw new \RuntimeException('Error executing script: '. $process->getErrorOutput(), $exitCode);
             }
         }
+    }
+
+    /**
+     * normalize Roundcube version string
+     */
+    private static function versionNormalize($version)
+    {
+        $parser = new VersionParser;
+
+        return $parser->normalize(str_replace('-git', '.999', $version));
     }
 
     /**

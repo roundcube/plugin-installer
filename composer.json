@@ -21,9 +21,6 @@
     "extra": {
         "class": "Roundcube\\Composer\\PluginInstaller"
     },
-    "bin": [
-        "src/bin/rcubeinitdb.sh"
-    ],
     "require": {
         "php": ">=5.3.0"
     },

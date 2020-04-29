@@ -1,8 +1,9 @@
 # Plugin Installer for Roundcube
 
-This installer ensures that plugins end up in the correct directory:
+This installer ensures that plugins and skins end up in the correct directory:
 
- * `<roundcube-root>/plugins/plugin-name`
+ * Plugins - `<roundcube-root>/plugins/plugin-name`
+ * Skins - `<roundcube-root>/Skins/skin-name`
 
 ## Minimum setup
 

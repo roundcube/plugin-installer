@@ -54,8 +54,16 @@ class PluginInstaller extends LibraryInstaller
         $extra = $package->getExtra();
 
         if (is_writeable($config_file) && php_sapi_name() == 'cli') {
-            $type   = $package_type == self::SKIN_PACKAGE ? 'skin' : 'plugin';
-            $answer = $this->io->askConfirmation("Do you want to activate the $type $package_name? [N|y] ", false);
+            $config = $this->composer->getConfig()->get('roundcube');
+
+            if (is_bool($config['enable-plugin']) === true) {
+                $answer = $config['enable-plugin'];
+            }
+            else {
+                $type   = $package_type == self::SKIN_PACKAGE ? 'skin' : 'plugin';
+                $answer = $this->io->askConfirmation("Do you want to activate the $type $package_name? [N|y] ", false);
+            }
+
             if (true === $answer) {
                 $this->rcubeAlterConfig($package_name, true, $package_type);
             }

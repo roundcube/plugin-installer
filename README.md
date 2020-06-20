@@ -32,6 +32,18 @@ This installer ensures that plugins and skins end up in the correct directory:
         }
     }
 
+To include skins for plugins create a directory in your skin called `plugins` with a sub-directory for each plugin, e.g.:
+```
+plugins
+    jaueryui
+        jquery-ui.css
+    managesieve
+        templates
+            managesieve.html
+        managesieve.css
+```
+These files will be automatically copied into the relevant plugin directory (if the plugin exists)
+
 ## Roundcube specifc composer.json params
 
 For both plugins and skins you can, optionally, add the following section to your `composer.json` file. All properties are optional and provided below with example values.

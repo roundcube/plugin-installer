@@ -14,12 +14,17 @@ class PluginInstaller extends ExtensionInstaller
 {
     protected $composer_type = 'roundcube-plugin';
 
-    public function getVendorDir($package_type)
+    public static function getPath()
     {
         $package_dir  = getcwd();
-        $package_dir .= '/plugins';
+        $package_dir .= DIRECTORY_SEPARATOR . 'plugins';
 
         return $package_dir;
+    }
+
+    public function getVendorDir()
+    {
+        return PluginInstaller::getPath();
     }
 
     protected function confirmInstall($package_name)
@@ -43,7 +48,8 @@ class PluginInstaller extends ExtensionInstaller
 
         if ($add && !in_array($package_name, $new_config)) {
             $new_config[] = $package_name;
-        } elseif (!$add && ($i = array_search($package_name, $new_config)) !== false) {
+        }
+        elseif (!$add && ($i = array_search($package_name, $new_config)) !== false) {
             unset($new_config[$i]);
         }
 

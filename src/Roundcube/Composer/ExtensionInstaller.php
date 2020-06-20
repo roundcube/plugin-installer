@@ -28,7 +28,7 @@ class ExtensionInstaller extends LibraryInstaller
     public function getInstallPath(PackageInterface $package)
     {
         $package_type = $package->getType();
-        $vendorDir    = $this->getVendorDir($package_type);
+        $vendorDir    = $this->getVendorDir();
 
         return sprintf('%s/%s', $vendorDir, $this->getPackageName($package));
     }
@@ -49,7 +49,7 @@ class ExtensionInstaller extends LibraryInstaller
         $config_file  = $this->rcubeConfigFile();
         $package_name = $this->getPackageName($package);
         $package_type = $package->getType();
-        $package_dir  = $this->getVendorDir($package_type) . DIRECTORY_SEPARATOR . $package_name;
+        $package_dir  = $this->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
 
         $extra = $package->getExtra();
 
@@ -114,7 +114,7 @@ class ExtensionInstaller extends LibraryInstaller
         if (!empty($extra['roundcube']['sql-dir'])) {
             $package_name = $this->getPackageName($target);
             $package_type = $target->getType();
-            $package_dir  = $this->getVendorDir($package_type) . DIRECTORY_SEPARATOR . $package_name;
+            $package_dir  = $this->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
 
             if ($sqldir = realpath($package_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                 $this->io->write("<info>Updating database schema for $package_name</info>");
@@ -172,15 +172,17 @@ class ExtensionInstaller extends LibraryInstaller
      *
      * @return string
      */
-    public function getVendorDir($package_type)
+    public function getVendorDir()
     {
-        return getcwd();
+        $package_dir = getcwd();
+
+        return $package_dir;
     }
 
     /**
      * Extract the (valid) package name from the package object
      */
-    private function getPackageName(PackageInterface $package)
+    protected function getPackageName(PackageInterface $package)
     {
         @list($vendor, $packageName) = explode('/', $package->getPrettyName());
 
@@ -312,7 +314,7 @@ class ExtensionInstaller extends LibraryInstaller
     {
         $package_name = $this->getPackageName($package);
         $package_type = $package->getType();
-        $package_dir  = $this->getVendorDir($package_type) . DIRECTORY_SEPARATOR . $package_name;
+        $package_dir  = $this->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
 
         // check for executable shell script
         if (($scriptfile = realpath($package_dir . DIRECTORY_SEPARATOR . $script)) && is_executable($scriptfile)) {

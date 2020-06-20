@@ -47,11 +47,12 @@ For both plugins and skins you can, optionally, add the following section to you
 
 ## Configuration
 
-This installer will ask if you want to enable each plugin as it is installed. To always enable all plugins add the following to the `composer.json` in the root of your Roundcube directory.
+This installer will ask if you want to enable each plugin or skin as it is installed. To always enable all plugins or skins add the following to the `composer.json` in the root of your Roundcube directory.
 
     "config": {
         "roundcube": {
-            "enable-plugin": true
+            "enable-plugin": true,
+            "enable-skin": true
         }
     }
 

@@ -305,7 +305,7 @@ class PluginInstaller extends LibraryInstaller
         // attempt to execute the given string as shell commands
         else {
             $process = new ProcessExecutor($this->io);
-            $exitCode = $process->execute($script, null, $plugin_dir);
+            $exitCode = $process->execute($script, $output, $plugin_dir);
             if ($exitCode !== 0) {
                 throw new \RuntimeException('Error executing script: '. $process->getErrorOutput(), $exitCode);
             }

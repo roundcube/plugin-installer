@@ -7,6 +7,7 @@ use Composer\Package\Version\VersionParser;
 use Composer\Package\PackageInterface;
 use Composer\Repository\InstalledRepositoryInterface;
 use Composer\Util\ProcessExecutor;
+use React\Promise\PromiseInterface;
 
 /**
  * @category Plugins
@@ -40,40 +41,52 @@ class PluginInstaller extends LibraryInstaller
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $this->rcubeVersionCheck($package);
-        parent::install($repo, $package);
 
-        // post-install: activate plugin in Roundcube config
-        $config_file = $this->rcubeConfigFile();
-        $plugin_name = $this->getPluginName($package);
-        $plugin_dir = $this->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
-        $extra = $package->getExtra();
-        $plugin_name = $this->getPluginName($package);
+        $self = $this;
+        $postInstall = function() use ($self, $package) {
+            // post-install: activate plugin in Roundcube config
+            $config_file = $self->rcubeConfigFile();
+            $plugin_name = $self->getPluginName($package);
+            $plugin_dir = $self->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
+            $extra = $package->getExtra();
+            $plugin_name = $self->getPluginName($package);
 
-        if (is_writeable($config_file) && php_sapi_name() == 'cli') {
-            $answer = $this->io->askConfirmation("Do you want to activate the plugin $plugin_name? [N|y] ", false);
-            if (true === $answer) {
-                $this->rcubeAlterConfig($plugin_name, true);
+            if (is_writeable($config_file) && php_sapi_name() == 'cli') {
+                $answer = $self->io->askConfirmation("Do you want to activate the plugin $plugin_name? [N|y] ", false);
+                if ($answer === true) {
+                    $self->rcubeAlterConfig($plugin_name, true);
+                }
             }
-        }
 
-        // copy config.inc.php.dist -> config.inc.php
-        if (is_file($plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist') && !is_file($plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php') && is_writeable($plugin_dir)) {
-            $this->io->write("<info>Creating plugin config file</info>");
-            copy($plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist', $plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php');
-        }
-
-        // initialize database schema
-        if (!empty($extra['roundcube']['sql-dir'])) {
-            if ($sqldir = realpath($plugin_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
-                $this->io->write("<info>Running database initialization script for $plugin_name</info>");
-                system(getcwd() . "/vendor/bin/rcubeinitdb.sh --package=$plugin_name --dir=$sqldir");
+            // copy config.inc.php.dist -> config.inc.php
+            if (is_file($plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist') && !is_file($plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php') && is_writeable($plugin_dir)) {
+                $self->io->write("<info>Creating plugin config file</info>");
+                copy($plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist', $plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php');
             }
+
+            // initialize database schema
+            if (!empty($extra['roundcube']['sql-dir'])) {
+                if ($sqldir = realpath($plugin_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
+                    $self->io->write("<info>Running database initialization script for $plugin_name</info>");
+                    system(getcwd() . "/vendor/bin/rcubeinitdb.sh --package=$plugin_name --dir=$sqldir");
+                }
+            }
+
+            // run post-install script
+            if (!empty($extra['roundcube']['post-install-script'])) {
+                $self->rcubeRunScript($extra['roundcube']['post-install-script'], $package);
+            }
+        };
+
+        $promise = parent::install($repo, $package);
+
+        // Composer v2 might return a promise here
+        if ($promise instanceof PromiseInterface) {
+            return $promise->then($postInstall);
         }
 
-        // run post-install script
-        if (!empty($extra['roundcube']['post-install-script'])) {
-            $this->rcubeRunScript($extra['roundcube']['post-install-script'], $package);
-        }
+        // If not, execute the code right away (composer v1, or v2 without async)
+        $postInstall();
     }
 
     /**
@@ -82,25 +95,37 @@ class PluginInstaller extends LibraryInstaller
     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
     {
         $this->rcubeVersionCheck($target);
-        parent::update($repo, $initial, $target);
 
-        $extra = $target->getExtra();
+        $self = $this;
+        $postUpdate = function() use ($self, $target) {
+            $extra = $target->getExtra();
 
-        // trigger updatedb.sh
-        if (!empty($extra['roundcube']['sql-dir'])) {
-            $plugin_name = $this->getPluginName($target);
-            $plugin_dir = $this->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
+            // trigger updatedb.sh
+            if (!empty($extra['roundcube']['sql-dir'])) {
+                $plugin_name = $self->getPluginName($target);
+                $plugin_dir = $self->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
 
-            if ($sqldir = realpath($plugin_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
-                $this->io->write("<info>Updating database schema for $plugin_name</info>");
-                system(getcwd() . "/bin/updatedb.sh --package=$plugin_name --dir=$sqldir", $res);
+                if ($sqldir = realpath($plugin_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
+                    $self->io->write("<info>Updating database schema for $plugin_name</info>");
+                    system(getcwd() . "/bin/updatedb.sh --package=$plugin_name --dir=$sqldir", $res);
+                }
             }
+
+            // run post-update script
+            if (!empty($extra['roundcube']['post-update-script'])) {
+                $self->rcubeRunScript($extra['roundcube']['post-update-script'], $target);
+            }
+        };
+
+        $promise = parent::update($repo, $initial, $target);
+
+        // Composer v2 might return a promise here
+        if ($promise instanceof PromiseInterface) {
+            return $promise->then($postUpdate);
         }
 
-        // run post-update script
-        if (!empty($extra['roundcube']['post-update-script'])) {
-            $this->rcubeRunScript($extra['roundcube']['post-update-script'], $target);
-        }
+        // If not, execute the code right away (composer v1, or v2 without async)
+        $postUpdate();
     }
 
     /**
@@ -108,17 +133,28 @@ class PluginInstaller extends LibraryInstaller
      */
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
-        parent::uninstall($repo, $package);
+        $self = $this;
+        $postUninstall = function() use ($self, $package) {
+            // post-uninstall: deactivate plugin
+            $plugin_name = $self->getPluginName($package);
+            $self->rcubeAlterConfig($plugin_name, false);
 
-        // post-uninstall: deactivate plugin
-        $plugin_name = $this->getPluginName($package);
-        $this->rcubeAlterConfig($plugin_name, false);
+            // run post-uninstall script
+            $extra = $package->getExtra();
+            if (!empty($extra['roundcube']['post-uninstall-script'])) {
+                $self->rcubeRunScript($extra['roundcube']['post-uninstall-script'], $package);
+            }
+        };
 
-        // run post-uninstall script
-        $extra = $package->getExtra();
-        if (!empty($extra['roundcube']['post-uninstall-script'])) {
-            $this->rcubeRunScript($extra['roundcube']['post-uninstall-script'], $package);
+        $promise = parent::uninstall($repo, $package);
+
+        // Composer v2 might return a promise here
+        if ($promise instanceof PromiseInterface) {
+            return $promise->then($postUninstall);
         }
+
+        // If not, execute the code right away (composer v1, or v2 without async)
+        $postUninstall();
     }
 
     /**

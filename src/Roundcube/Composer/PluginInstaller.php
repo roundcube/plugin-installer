@@ -52,7 +52,7 @@ class PluginInstaller extends LibraryInstaller
             $plugin_name = $self->getPluginName($package);
 
             if (is_writeable($config_file) && php_sapi_name() == 'cli') {
-                $answer = $self->io->askConfirmation("Do you want to activate the plugin $plugin_name? [Y|n] ", false);
+                $answer = $self->io->askConfirmation("Do you want to activate the plugin $plugin_name? [Y|n] ", true);
                 if ($answer === true) {
                     $self->rcubeAlterConfig($plugin_name, true);
                 }

@@ -97,14 +97,28 @@ class PluginInstaller extends LibraryInstaller
         $this->rcubeVersionCheck($target);
 
         $self = $this;
-        $postUpdate = function() use ($self, $target) {
+
+        // backup the original plugin config
+        $plugin_name  = $self->getPluginName($initial);
+        $plugin_dir   = $self->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
+        $config_file  = $plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php';
+        $config_templ = is_readable($config_file) ? (@file_get_contents($config_file) ?: '') : '';
+
+        $postUpdate = function() use ($self, $target, $config_templ) {
+            $plugin_name = $self->getPluginName($target);
+            $plugin_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
+            $config_file = $plugin_dir . DIRECTORY_SEPARATOR . 'config.inc.php';
+
+            // restore the original plugin config
+            if (!empty($config_templ) && is_writeable($plugin_dir)) {
+                $self->io->write("<info>Restore plugin config file</info>");
+                $success = file_put_contents($config_file, $config_templ);
+            }
+
             $extra = $target->getExtra();
 
             // trigger updatedb.sh
             if (!empty($extra['roundcube']['sql-dir'])) {
-                $plugin_name = $self->getPluginName($target);
-                $plugin_dir = $self->getVendorDir() . DIRECTORY_SEPARATOR . $plugin_name;
-
                 if ($sqldir = realpath($plugin_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                     $self->io->write("<info>Updating database schema for $plugin_name</info>");
                     system(getcwd() . "/bin/updatedb.sh --package=$plugin_name --dir=$sqldir", $res);

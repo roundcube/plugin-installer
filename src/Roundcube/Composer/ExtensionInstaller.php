@@ -120,14 +120,31 @@ class ExtensionInstaller extends LibraryInstaller
         $this->rcubeVersionCheck($target);
 
         $self = $this;
-        $postUpdate = function() use ($self, $target) {
+
+        // backup the original plugin config
+        $package_name = $self->getPackageName($initial);
+        $package_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
+        $config_file  = $package_dir . DIRECTORY_SEPARATOR . 'config.inc.php';
+        $config_templ = is_readable($config_file) ? (@file_get_contents($config_file) ?: '') : '';
+
+        $postUpdate = function() use ($self, $target, $config_templ) {
+            $package_name = $self->getPackageName($target);
+            $package_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
+            $config_file  = $package_dir . DIRECTORY_SEPARATOR . 'config.inc.php';
+
+            // restore the original plugin config
+            if (!empty($config_templ) && is_writeable($package_dir)) {
+                $self->io->write("<info>Restore package config file</info>");
+                $success = file_put_contents($config_file, $config_templ);
+                if (!$success) {
+                    throw new \Exception("Restoring package config file failed.");
+                }
+            }
+
             $extra = $target->getExtra();
 
             // update database schema
             if (!empty($extra['roundcube']['sql-dir'])) {
-                $package_name = $self->getPackageName($target);
-                $package_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
-
                 if ($sqldir = realpath($package_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                     $self->io->write("<info>Updating database schema for $package_name</info>");
 

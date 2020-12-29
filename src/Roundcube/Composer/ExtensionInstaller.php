@@ -298,7 +298,7 @@ class ExtensionInstaller extends LibraryInstaller
             $varname = '$rcmail_config';
         }
 
-        if (is_array($config) && is_writeable($config_file)) {
+        if (!empty($config) && is_writeable($config_file)) {
             $config_template = @file_get_contents($config_file) ?: '';
 
             if ($config = $this->getConfig($package_name, $config, $add)) {

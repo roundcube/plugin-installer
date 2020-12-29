@@ -35,13 +35,15 @@ This installer ensures that plugins and skins end up in the correct directory:
 ## Roundcube specifc composer.json params
 
 For both plugins and skins you can, optionally, add the following section to your `composer.json` file. All properties are optional and provided below with example values.
+`persistent-files` defines a list of files which should be maintained across updates. By default only `config.inc.php` is maintained. The array should contain paths relative to the root of your plugin.
 
     "extra": {
         "roundcube": {
             "min-version": "1.4.0",
             "sql-dir": "./SQL",
             "post-install-script": "./bin/install.sh",
-            "post-update-script": "./bin/update.sh"
+            "post-update-script": "./bin/update.sh",
+            "persistent-files": ["config.inc.php", "skins/elastic/_custom.less"]
         }
     }
 

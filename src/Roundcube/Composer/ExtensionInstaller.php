@@ -7,6 +7,7 @@ use Composer\Package\Version\VersionParser;
 use Composer\Package\PackageInterface;
 use Composer\Repository\InstalledRepositoryInterface;
 use Composer\Util\ProcessExecutor;
+use Composer\Util\Filesystem;
 use React\Promise\PromiseInterface;
 
 /**
@@ -119,29 +120,37 @@ class ExtensionInstaller extends LibraryInstaller
 
         $this->rcubeVersionCheck($target);
 
-        $self = $this;
+        $self  = $this;
+        $extra = $target->getExtra();
+        $fs    = new Filesystem();
 
-        // backup the original plugin config
-        $package_name = $self->getPackageName($initial);
-        $package_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
-        $config_file  = $package_dir . DIRECTORY_SEPARATOR . 'config.inc.php';
-        $config_templ = is_readable($config_file) ? (@file_get_contents($config_file) ?: '') : '';
+        // backup persistent files e.g. config.inc.php
+        $package_name     = $self->getPackageName($initial);
+        $package_dir      = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
+        $temp_dir         = $package_dir . '-' . sprintf('%010d%010d', mt_rand(), mt_rand());
 
-        $postUpdate = function() use ($self, $target, $config_templ) {
+        // make a backup of existing files (for restoring persistent files)
+        $fs->copy($package_dir, $temp_dir);
+
+        $postUpdate = function() use ($self, $target, $extra, $fs, $temp_dir) {
             $package_name = $self->getPackageName($target);
             $package_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
-            $config_file  = $package_dir . DIRECTORY_SEPARATOR . 'config.inc.php';
 
-            // restore the original plugin config
-            if (!empty($config_templ) && is_writeable($package_dir)) {
-                $self->io->write("<info>Restore package config file</info>");
-                $success = file_put_contents($config_file, $config_templ);
-                if (!$success) {
-                    throw new \Exception("Restoring package config file failed.");
+            // restore persistent files
+            $persistent_files = !empty($extra['roundcube']['persistent-files']) ? $extra['roundcube']['persistent-files'] : ['config.inc.php'];
+            foreach ($persistent_files as $file) {
+                $path = $temp_dir . DIRECTORY_SEPARATOR . $file;
+                if (is_readable($path)) {
+                    if ($fs->copy($path, $package_dir . DIRECTORY_SEPARATOR . $file)) {
+                        $self->io->write("<info>Restored $package_name/$file</info>");
+                    }
+                    else {
+                        throw new \Exception("Restoring " . $file . " failed.");
+                    }
                 }
             }
-
-            $extra = $target->getExtra();
+            // remove backup folder
+            $fs->remove($temp_dir);
 
             // update database schema
             if (!empty($extra['roundcube']['sql-dir'])) {

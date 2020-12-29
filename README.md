@@ -49,12 +49,14 @@ For both plugins and skins you can, optionally, add the following section to you
 
 ## Configuration
 
-This installer will ask if you want to enable each plugin or skin as it is installed. To always enable all plugins or skins add the following to the `composer.json` in the root of your Roundcube directory.
+This installer will ask if you want to enable each plugin or skin as it is installed. To always enable all plugins or skins add `enable-plugin`/`enable-skin` to the `config` section in the `composer.json` in the root of your Roundcube directory.
+When uninstalling packages Composer will not remove the folder. To remove the folder set `uninstall-remove-folder` in your config.
 
     "config": {
         "roundcube": {
             "enable-plugin": true,
-            "enable-skin": true
+            "enable-skin": true,
+            "uninstall-remove-folder": true
         }
     }
 

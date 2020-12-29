@@ -193,10 +193,13 @@ class ExtensionInstaller extends LibraryInstaller
         define('INSTALL_PATH', getcwd() . '/');
         include_once(INSTALL_PATH . 'program/include/clisetup.php');
 
-        $self = $this;
-        $postUninstall = function() use ($self, $package) {
+        $self   = $this;
+        $config = $self->composer->getConfig()->get('roundcube');
+
+        $postUninstall = function() use ($self, $package, $config) {
             // post-uninstall: deactivate package
             $package_name = $self->getPackageName($package);
+            $package_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
 
             $self->rcubeAlterConfig($package_name, false);
 
@@ -204,6 +207,13 @@ class ExtensionInstaller extends LibraryInstaller
             $extra = $package->getExtra();
             if (!empty($extra['roundcube']['post-uninstall-script'])) {
                 $self->rcubeRunScript($extra['roundcube']['post-uninstall-script'], $package);
+            }
+
+            // remove package folder
+            if (!empty($config['uninstall-remove-folder'])) {
+                $fs = new Filesystem();
+                $fs->remove($package_dir);
+                $self->io->write("<info>Removed $package_name files</info>");
             }
         };
 

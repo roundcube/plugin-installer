@@ -26,7 +26,7 @@ class PluginInstaller extends ExtensionInstaller
     {
         $config = $this->composer->getConfig()->get('roundcube');
 
-        if (is_bool($config['enable-plugin']) === true) {
+        if (!empty($config['enable-plugin'])) {
             $answer = $config['enable-plugin'];
         }
         else {
@@ -38,7 +38,7 @@ class PluginInstaller extends ExtensionInstaller
 
     protected function getConfig($package_name, $config, $add )
     {
-        $cur_config = !empty($config['plugins']) ? ((array) $config['plugins']) : array();
+        $cur_config = !empty($config['plugins']) ? ((array) $config['plugins']) : [];
         $new_config = $cur_config;
 
         if ($add && !in_array($package_name, $new_config)) {
@@ -49,8 +49,8 @@ class PluginInstaller extends ExtensionInstaller
         }
 
         if ($new_config != $cur_config) {
-            $config_val = count($new_config) > 0 ? "array(\n\t'" . join("',\n\t'", $new_config) . "',\n);" : "array();";
-            $result = array('plugins', $config_val);
+            $config_val = count($new_config) > 0 ? "[\n\t'" . join("',\n\t'", $new_config) . "',\n];" : "[];";
+            $result = ['plugins', $config_val];
         }
         else {
             $result = false;

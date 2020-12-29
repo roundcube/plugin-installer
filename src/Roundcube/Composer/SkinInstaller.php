@@ -26,7 +26,7 @@ class SkinInstaller extends ExtensionInstaller
     {
         $config = $this->composer->getConfig()->get('roundcube');
 
-        if (is_bool($config['enable-skin']) === true) {
+        if (!empty($config['enable-skin'])) {
             $answer = $config['enable-skin'];
         }
         else {
@@ -50,7 +50,7 @@ class SkinInstaller extends ExtensionInstaller
 
         if ($new_config != $cur_config) {
             $config_val = !empty($new_config) ? "'$new_config';" : null;
-            $result = array('skin', $config_val);
+            $result = ['skin', $config_val];
         }
         else {
             $result = false;

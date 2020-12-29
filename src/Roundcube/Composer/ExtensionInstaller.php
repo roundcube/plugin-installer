@@ -272,7 +272,7 @@ class ExtensionInstaller extends LibraryInstaller
         $extra = $package->getExtra();
 
         if (!empty($extra['roundcube'])) {
-            foreach (array('min-version' => '>=', 'max-version' => '<=') as $key => $operator) {
+            foreach (['min-version' => '>=', 'max-version' => '<='] as $key => $operator) {
                 if (!empty($extra['roundcube'][$key])) {
                     $version = self::versionNormalize($extra['roundcube'][$key]);
                     if (!self::versionCompare($rcubeVersion, $version, $operator)) {

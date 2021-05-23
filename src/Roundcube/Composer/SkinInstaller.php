@@ -16,10 +16,7 @@ class SkinInstaller extends ExtensionInstaller
 
     public function getVendorDir()
     {
-        $package_dir  = getcwd();
-        $package_dir .= DIRECTORY_SEPARATOR . 'skins';
-
-        return $package_dir;
+        return getcwd() . DIRECTORY_SEPARATOR . 'skins';
     }
 
     protected function confirmInstall($package_name)

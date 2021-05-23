@@ -3,7 +3,7 @@
 This installer ensures that plugins and skins end up in the correct directory:
 
  * Plugins - `<roundcube-root>/plugins/plugin-name`
- * Skins - `<roundcube-root>/Skins/skin-name`
+ * Skins - `<roundcube-root>/skins/skin-name`
 
 ## Minimum setup
 
@@ -32,7 +32,7 @@ This installer ensures that plugins and skins end up in the correct directory:
         }
     }
 
-## Roundcube specifc composer.json params
+## Roundcube specific composer.json params
 
 For both plugins and skins you can, optionally, add the following section to your `composer.json` file. All properties are optional and provided below with example values.
 `persistent-files` defines a list of files which should be maintained across updates. By default only `config.inc.php` is maintained. The array should contain paths relative to the root of your plugin.

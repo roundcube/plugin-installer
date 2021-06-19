@@ -1,7 +1,7 @@
 {
     "name": "roundcube/plugin-installer",
-    "description": "A composer-installer for Roundcube plugins.",
-    "type": "composer-installer",
+    "description": "A composer-installer for Roundcube plugins and skins.",
+    "type": "composer-plugin",
     "license": "GPL-3.0+",
     "authors": [
         {
@@ -11,6 +11,10 @@
         {
             "name": "Till Klampaeckel",
             "email": "till@php.net"
+        },
+        {
+            "name": "Philip Weir",
+            "email": "roundcube@tehinterweb.co.uk"
         }
     ],
     "autoload": {
@@ -19,13 +23,12 @@
         }
     },
     "extra": {
-        "class": "Roundcube\\Composer\\PluginInstaller"
+        "class": [
+            "Roundcube\\Composer\\RoundcubeInstaller"
+        ]
     },
-    "bin": [
-        "src/bin/rcubeinitdb.sh"
-    ],
     "require": {
-        "php": ">=5.3.0"
+        "composer-plugin-api": "^1.0 || ^2.0"
     },
     "require-dev": {
         "composer/composer": "*"

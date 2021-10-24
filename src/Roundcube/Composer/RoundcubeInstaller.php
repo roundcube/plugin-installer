@@ -22,7 +22,7 @@ class RoundcubeInstaller implements PluginInterface
 
     public function deactivate(Composer $composer, IOInterface $io)
     {
-        foreach ($installers as $installer) {
+        foreach ($this->installers as $installer) {
             $composer->getInstallationManager()->removeInstaller($installer);
         }
     }

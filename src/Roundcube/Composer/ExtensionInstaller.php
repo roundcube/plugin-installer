@@ -43,7 +43,9 @@ class ExtensionInstaller extends LibraryInstaller
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         // initialize Roundcube environment
-        define('INSTALL_PATH', getcwd() . '/');
+        if (!defined('INSTALL_PATH')) {
+            define('INSTALL_PATH', getcwd() . '/');
+        }
         include_once(INSTALL_PATH . 'program/include/clisetup.php');
 
         $this->rcubeVersionCheck($package);
@@ -115,7 +117,9 @@ class ExtensionInstaller extends LibraryInstaller
     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
     {
         // initialize Roundcube environment
-        define('INSTALL_PATH', getcwd() . '/');
+        if (!defined('INSTALL_PATH')) {
+            define('INSTALL_PATH', getcwd() . '/');
+        }
         include_once(INSTALL_PATH . 'program/include/clisetup.php');
 
         $this->rcubeVersionCheck($target);
@@ -190,7 +194,9 @@ class ExtensionInstaller extends LibraryInstaller
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         // initialize Roundcube environment
-        define('INSTALL_PATH', getcwd() . '/');
+        if (!defined('INSTALL_PATH')) {
+            define('INSTALL_PATH', getcwd() . '/');
+        }
         include_once(INSTALL_PATH . 'program/include/clisetup.php');
 
         $self   = $this;

@@ -23,7 +23,7 @@ class SkinInstaller extends ExtensionInstaller
     {
         $config = $this->composer->getConfig()->get('roundcube');
 
-        if (!empty($config['enable-skin'])) {
+        if (isset($config['enable-skin'])) {
             $answer = $config['enable-skin'];
         }
         else {

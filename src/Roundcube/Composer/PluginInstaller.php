@@ -23,7 +23,7 @@ class PluginInstaller extends ExtensionInstaller
     {
         $config = $this->composer->getConfig()->get('roundcube');
 
-        if (!empty($config['enable-plugin'])) {
+        if (isset($config['enable-plugin'])) {
             $answer = $config['enable-plugin'];
         }
         else {

@@ -29,12 +29,12 @@ class ExtensionInstaller extends LibraryInstaller
      */
     public function getInstallPath(PackageInterface $package)
     {
-        static $vendorDir;
-        if ($vendorDir === null) {
-            $vendorDir = $this->getVendorDir();
+        static $vendorDir = [];
+        if (empty($vendorDir[static::class])) {
+            $vendorDir[static::class] = $this->getVendorDir();
         }
 
-        return sprintf('%s/%s', $vendorDir, $this->getPackageName($package));
+        return sprintf('%s/%s', $vendorDir[static::class], $this->getPackageName($package));
     }
 
     /**

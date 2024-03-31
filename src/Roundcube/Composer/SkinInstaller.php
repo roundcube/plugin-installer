@@ -8,7 +8,7 @@ namespace Roundcube\Composer;
  * @author   Philip Weir <roundcube@tehinterweb.co.uk>
  * @license  GPL-3.0+
  * @version  GIT: <git_id>
- * @link     http://github.com/roundcube/plugin-installer
+ * @link     https://github.com/roundcube/plugin-installer
  */
 class SkinInstaller extends ExtensionInstaller
 {

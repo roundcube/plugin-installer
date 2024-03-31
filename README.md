@@ -71,4 +71,4 @@ Submit your plugin or skin to [Packagist](https://packagist.org/).
  * add your plugin in the `require` section of composer.json
  * `composer.phar install`
 
-Read the whole story at [plugins.roundcube.net](http://plugins.roundcube.net/about).
+Read the whole story at [plugins.roundcube.net](http://plugins.roundcube.net/#/about/).

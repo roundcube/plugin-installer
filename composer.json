@@ -28,7 +28,8 @@
         ]
     },
     "require": {
-        "composer-plugin-api": "^1.0 || ^2.0"
+        "composer-plugin-api": "^1.0 || ^2.0",
+        "roundcube/roundcubemail": "*"
     },
     "require-dev": {
         "composer/composer": "*"

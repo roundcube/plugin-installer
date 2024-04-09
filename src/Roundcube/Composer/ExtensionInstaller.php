@@ -20,15 +20,28 @@ use React\Promise\PromiseInterface;
  * @version  GIT: <git_id>
  * @link     https://github.com/roundcube/plugin-installer
  */
-class ExtensionInstaller extends LibraryInstaller
+abstract class ExtensionInstaller extends LibraryInstaller
 {
     protected $composer_type;
+
+    protected function getRoundcubemailInstallPath(): string
+    {
+        $roundcubemailPackage = $this->composer
+            ->getRepositoryManager()
+            ->findPackage('roundcube/roundcubemail', '*');
+
+        return $this->getInstallPath($roundcubemailPackage);
+    }
 
     /**
      * {@inheritDoc}
      */
     public function getInstallPath(PackageInterface $package)
     {
+        if (!$this->supports($package->getType())) {
+            return parent::getInstallPath($package);
+        }
+
         static $vendorDir;
         if ($vendorDir === null) {
             $vendorDir = $this->getVendorDir();
@@ -44,7 +57,7 @@ class ExtensionInstaller extends LibraryInstaller
     {
         // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
-            define('INSTALL_PATH', getcwd() . '/');
+            define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
         }
         require_once INSTALL_PATH . 'program/include/iniset.php';
 
@@ -118,7 +131,7 @@ class ExtensionInstaller extends LibraryInstaller
     {
         // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
-            define('INSTALL_PATH', getcwd() . '/');
+            define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
         }
         require_once INSTALL_PATH . 'program/include/iniset.php';
 
@@ -195,7 +208,7 @@ class ExtensionInstaller extends LibraryInstaller
     {
         // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
-            define('INSTALL_PATH', getcwd() . '/');
+            define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
         }
         require_once INSTALL_PATH . 'program/include/iniset.php';
 
@@ -247,10 +260,7 @@ class ExtensionInstaller extends LibraryInstaller
      *
      * @return string
      */
-    public function getVendorDir()
-    {
-        return getcwd();
-    }
+    abstract public function getVendorDir();
 
     /**
      * Extract the (valid) package name from the package object
@@ -368,7 +378,7 @@ class ExtensionInstaller extends LibraryInstaller
     {
         $config = new \rcube_config();
         $paths  = $config->resolve_paths($file);
-        $path   = getcwd() . '/config/' . $file;
+        $path   = $this->getRoundcubemailInstallPath() . '/config/' . $file;
 
         foreach ($paths as $fpath) {
             if ($fpath && is_file($fpath) && is_readable($fpath)) {
@@ -396,7 +406,7 @@ class ExtensionInstaller extends LibraryInstaller
 
         // run PHP script in Roundcube context
         if ($scriptfile && preg_match('/\.php$/', $scriptfile)) {
-            $incdir = realpath(getcwd() . '/program/include');
+            $incdir = realpath($this->getRoundcubemailInstallPath() . '/program/include');
             include_once($incdir . '/iniset.php');
             include($scriptfile);
         }

@@ -46,7 +46,7 @@ class ExtensionInstaller extends LibraryInstaller
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', getcwd() . '/');
         }
-        include_once(INSTALL_PATH . 'program/include/clisetup.php');
+        require_once INSTALL_PATH . 'program/include/iniset.php';
 
         $this->rcubeVersionCheck($package);
 
@@ -120,7 +120,7 @@ class ExtensionInstaller extends LibraryInstaller
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', getcwd() . '/');
         }
-        include_once(INSTALL_PATH . 'program/include/clisetup.php');
+        require_once INSTALL_PATH . 'program/include/iniset.php';
 
         $this->rcubeVersionCheck($target);
 
@@ -197,7 +197,7 @@ class ExtensionInstaller extends LibraryInstaller
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', getcwd() . '/');
         }
-        include_once(INSTALL_PATH . 'program/include/clisetup.php');
+        require_once INSTALL_PATH . 'program/include/iniset.php';
 
         $self   = $this;
         $config = $self->composer->getConfig()->get('roundcube');

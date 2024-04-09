@@ -16,7 +16,7 @@ class PluginInstaller extends ExtensionInstaller
 
     public function getVendorDir()
     {
-        return getcwd() . DIRECTORY_SEPARATOR . 'plugins';
+        return $this->getRoundcubemailInstallPath() . DIRECTORY_SEPARATOR . 'plugins';
     }
 
     protected function confirmInstall($package_name)

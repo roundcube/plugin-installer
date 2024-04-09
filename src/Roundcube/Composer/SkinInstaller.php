@@ -16,7 +16,7 @@ class SkinInstaller extends ExtensionInstaller
 
     public function getVendorDir()
     {
-        return getcwd() . DIRECTORY_SEPARATOR . 'skins';
+        return $this->getRoundcubemailInstallPath() . DIRECTORY_SEPARATOR . 'skins';
     }
 
     protected function confirmInstall($package_name)

@@ -8,7 +8,7 @@ use Composer\Plugin\PluginInterface;
 
 class RoundcubeInstaller implements PluginInterface
 {
-    private $extentions = ['\Roundcube\Composer\PluginInstaller', '\Roundcube\Composer\SkinInstaller'];
+    private $extentions = [PluginInstaller::class, SkinInstaller::class];
     private $installers = [];
 
     public function activate(Composer $composer, IOInterface $io)

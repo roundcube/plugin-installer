@@ -42,10 +42,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
             return parent::getInstallPath($package);
         }
 
-        static $vendorDir;
-        if ($vendorDir === null) {
-            $vendorDir = $this->getVendorDir();
-        }
+        $vendorDir = $this->getVendorDir();
 
         return sprintf('%s/%s', $vendorDir, $this->getPackageName($package));
     }

@@ -12,34 +12,8 @@ parameters:
         # relax strict rules
         - '~^Only booleans are allowed in .+, .+ given( on the (left|right) side)?\.~'
         - '~^Construct empty\(\) is not allowed\. Use more strict comparison\.~'
-        - '~^Loose comparison via "[=!]=" is not allowed\.~'
-        
-        # TODO
-        -
-            message: '~^Anonymous function uses \$this assigned to variable \$self. Use \$this directly in the function body\.$~'
-            path: 'src/ExtensionInstaller.php'
-            count: 3
+
         -
             message: '~^Constant RCMAIL_VERSION not found\.$~'
             path: 'src/ExtensionInstaller.php'
             count: 3
-        -
-            message: '~^Method Roundcube\\Composer\\ExtensionInstaller::install\(\) should return React\\Promise\\PromiseInterface<void\|null>|null but return statement is missing\.$~'
-            path: 'src/ExtensionInstaller.php'
-            count: 3
-        -
-            message: '~^Undefined variable: \$rootdir$~'
-            path: 'src/ExtensionInstaller.php'
-            count: 1
-        -
-            message: '~^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$~'
-            path: 'src/ExtensionInstaller.php'
-            count: 1
-        -
-            message: '~^Call to function in_array\(\) requires parameter #3 to be set\.$~'
-            path: 'src/PluginInstaller.php'
-            count: 1
-        -
-            message: '~^Call to function array_search\(\) requires parameter #3 to be set\.$~'
-            path: 'src/PluginInstaller.php'
-            count: 1

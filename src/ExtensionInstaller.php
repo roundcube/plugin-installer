@@ -66,7 +66,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
             $package_dir  = $this->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
             $extra        = $package->getExtra();
 
-            if (is_writeable($config_file) && php_sapi_name() == 'cli' && $this->confirmInstall($package_name)) {
+            if (is_writeable($config_file) && php_sapi_name() === 'cli' && $this->confirmInstall($package_name)) {
                 $this->rcubeAlterConfig($package_name);
             }
 
@@ -118,6 +118,8 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
         // If not, execute the code right away (composer v1, or v2 without async)
         $postInstall();
+
+        return null;
     }
 
     /**
@@ -194,6 +196,8 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
         // If not, execute the code right away (composer v1, or v2 without async)
         $postUpdate();
+
+        return null;
     }
 
     /**
@@ -239,6 +243,8 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
         // If not, execute the code right away (composer v1, or v2 without async)
         $postUninstall();
+
+        return null;
     }
 
     /**
@@ -275,10 +281,6 @@ abstract class ExtensionInstaller extends LibraryInstaller
         // read rcube version from iniset
         $rcubeVersion = self::versionNormalize(RCMAIL_VERSION);
 
-        if (empty($rcubeVersion)) {
-            throw new \Exception("Unable to find a Roundcube installation in $rootdir");
-        }
-
         $extra = $package->getExtra();
 
         if (!empty($extra['roundcube'])) {
@@ -309,7 +311,10 @@ abstract class ExtensionInstaller extends LibraryInstaller
         }
 
         if (!empty($config) && is_writeable($config_file)) {
-            $config_template = @file_get_contents($config_file) ?: '';
+            $config_template = @file_get_contents($config_file);
+            if ($config_template === false) {
+                $config_template = '';
+            }
 
             if ($config = $this->getConfig($package_name, $config, $add)) {
                 list($config_name, $config_val) = $config;
@@ -342,7 +347,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
             }
         }
 
-        if ($success && php_sapi_name() == 'cli') {
+        if ($success && php_sapi_name() === 'cli') {
             $this->io->write("<info>Updated local config at $config_file</info>");
         }
 
@@ -417,7 +422,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
     /**
      * normalize Roundcube version string
      */
-    private static function versionNormalize($version)
+    private static function versionNormalize(string $version): string
     {
         $parser = new VersionParser;
 

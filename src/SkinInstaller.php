@@ -38,14 +38,14 @@ class SkinInstaller extends ExtensionInstaller
         $cur_config = !empty($config['skin']) ? $config['skin'] : null;
         $new_config = $cur_config;
 
-        if ($add && $new_config != $package_name) {
+        if ($add && $new_config !== $package_name) {
             $new_config = $package_name;
         }
-        elseif (!$add && $new_config == $package_name) {
+        elseif (!$add && $new_config === $package_name) {
             $new_config = null;
         }
 
-        if ($new_config != $cur_config) {
+        if ($new_config !== $cur_config) {
             $config_val = !empty($new_config) ? "'$new_config';" : null;
             $result = ['skin', $config_val];
         }

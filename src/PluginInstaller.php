@@ -38,14 +38,14 @@ class PluginInstaller extends ExtensionInstaller
         $cur_config = !empty($config['plugins']) ? ((array) $config['plugins']) : [];
         $new_config = $cur_config;
 
-        if ($add && !in_array($package_name, $new_config)) {
+        if ($add && !in_array($package_name, $new_config, true)) {
             $new_config[] = $package_name;
         }
-        elseif (!$add && ($i = array_search($package_name, $new_config)) !== false) {
+        elseif (!$add && ($i = array_search($package_name, $new_config, true)) !== false) {
             unset($new_config[$i]);
         }
 
-        if ($new_config != $cur_config) {
+        if ($new_config !== $cur_config) {
             $config_val = count($new_config) > 0 ? "[\n\t'" . join("',\n\t'", $new_config) . "',\n];" : "[];";
             $result = ['plugins', $config_val];
         }

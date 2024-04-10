@@ -26,6 +26,13 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
     protected function getRoundcubemailInstallPath(): string
     {
+        $rootPackage = $this->composer->getPackage();
+        if ($rootPackage->getName() === 'roundcube/roundcubemail') {
+            $this->initializeVendorDir();
+
+            return dirname($this->vendorDir);
+        }
+
         $roundcubemailPackage = $this->composer
             ->getRepositoryManager()
             ->findPackage('roundcube/roundcubemail', '*');

@@ -24,14 +24,6 @@ parameters:
             path: 'src/ExtensionInstaller.php'
             count: 3
         -
-            message: '~^Call to static method db_init\(\) on an unknown class rcmail_utils\.$~'
-            path: 'src/ExtensionInstaller.php'
-            count: 1
-        -
-            message: '~^Call to static method db_update\(\) on an unknown class rcmail_utils\.$~'
-            path: 'src/ExtensionInstaller.php'
-            count: 1
-        -
             message: '~^Method Roundcube\\Composer\\ExtensionInstaller::install\(\) should return React\\Promise\\PromiseInterface<void\|null>|null but return statement is missing\.$~'
             path: 'src/ExtensionInstaller.php'
             count: 3
@@ -41,14 +33,6 @@ parameters:
             count: 1
         -
             message: '~^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$~'
-            path: 'src/ExtensionInstaller.php'
-            count: 1
-        -
-            message: '~^Instantiated class rcube_config not found\.$~'
-            path: 'src/ExtensionInstaller.php'
-            count: 1
-        -
-            message: '~^Call to method resolve_paths\(\) on an unknown class rcube_config\.$~'
             path: 'src/ExtensionInstaller.php'
             count: 1
         -

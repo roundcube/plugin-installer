@@ -58,7 +58,7 @@ return (new Config())
         // also prevent bounding of unwanted variables for GC
         'use_arrow_functions' => false,
 
-        # TODO
+        // TODO
         'align_multiline_comment' => false,
         'array_indentation' => false,
         'binary_operator_spaces' => false,

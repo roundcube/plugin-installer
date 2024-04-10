@@ -60,21 +60,20 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
         $this->rcubeVersionCheck($package);
 
-        $self = $this;
-        $postInstall = function() use ($self, $package) {
-            $config_file  = $self->rcubeConfigFile();
-            $package_name = $self->getPackageName($package);
-            $package_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
+        $postInstall = function() use ($package) {
+            $config_file  = $this->rcubeConfigFile();
+            $package_name = $this->getPackageName($package);
+            $package_dir  = $this->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
             $extra        = $package->getExtra();
 
             if (is_writeable($config_file) && php_sapi_name() == 'cli' && $this->confirmInstall($package_name)) {
-                $self->rcubeAlterConfig($package_name);
+                $this->rcubeAlterConfig($package_name);
             }
 
             // copy config.inc.php.dist -> config.inc.php
             if (is_file($package_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist')) {
                 $config_exists   = false;
-                $alt_config_file = $self->rcubeConfigFile($package_name . '.inc.php');
+                $alt_config_file = $this->rcubeConfigFile($package_name . '.inc.php');
 
                 if (is_file($package_dir . DIRECTORY_SEPARATOR . 'config.inc.php')) {
                     $config_exists = true;
@@ -84,7 +83,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
                 }
 
                 if (!$config_exists && is_writeable($package_dir)) {
-                    $self->io->write("<info>Creating package config file</info>");
+                    $this->io->write("<info>Creating package config file</info>");
                     copy($package_dir . DIRECTORY_SEPARATOR . 'config.inc.php.dist', $package_dir . DIRECTORY_SEPARATOR . 'config.inc.php');
                 }
             }
@@ -92,7 +91,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
             // initialize database schema
             if (!empty($extra['roundcube']['sql-dir'])) {
                 if ($sqldir = realpath($package_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
-                    $self->io->write("<info>Running database initialization script for $package_name</info>");
+                    $this->io->write("<info>Running database initialization script for $package_name</info>");
 
                     $roundcube_version = self::versionNormalize(RCMAIL_VERSION);
                     if (self::versionCompare($roundcube_version, '1.2.0', '>=')) {
@@ -106,7 +105,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
             // run post-install script
             if (!empty($extra['roundcube']['post-install-script'])) {
-                $self->rcubeRunScript($extra['roundcube']['post-install-script'], $package);
+                $this->rcubeRunScript($extra['roundcube']['post-install-script'], $package);
             }
         };
 
@@ -134,21 +133,20 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
         $this->rcubeVersionCheck($target);
 
-        $self  = $this;
         $extra = $target->getExtra();
         $fs    = new Filesystem();
 
         // backup persistent files e.g. config.inc.php
-        $package_name     = $self->getPackageName($initial);
-        $package_dir      = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
+        $package_name     = $this->getPackageName($initial);
+        $package_dir      = $this->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
         $temp_dir         = $package_dir . '-' . sprintf('%010d%010d', mt_rand(), mt_rand());
 
         // make a backup of existing files (for restoring persistent files)
         $fs->copy($package_dir, $temp_dir);
 
-        $postUpdate = function() use ($self, $target, $extra, $fs, $temp_dir) {
-            $package_name = $self->getPackageName($target);
-            $package_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
+        $postUpdate = function() use ($target, $extra, $fs, $temp_dir) {
+            $package_name = $this->getPackageName($target);
+            $package_dir  = $this->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
 
             // restore persistent files
             $persistent_files = !empty($extra['roundcube']['persistent-files']) ? $extra['roundcube']['persistent-files'] : ['config.inc.php'];
@@ -156,7 +154,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
                 $path = $temp_dir . DIRECTORY_SEPARATOR . $file;
                 if (is_readable($path)) {
                     if ($fs->copy($path, $package_dir . DIRECTORY_SEPARATOR . $file)) {
-                        $self->io->write("<info>Restored $package_name/$file</info>");
+                        $this->io->write("<info>Restored $package_name/$file</info>");
                     }
                     else {
                         throw new \Exception("Restoring " . $file . " failed.");
@@ -169,7 +167,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
             // update database schema
             if (!empty($extra['roundcube']['sql-dir'])) {
                 if ($sqldir = realpath($package_dir . DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
-                    $self->io->write("<info>Updating database schema for $package_name</info>");
+                    $this->io->write("<info>Updating database schema for $package_name</info>");
 
                     $roundcube_version = self::versionNormalize(RCMAIL_VERSION);
                     if (self::versionCompare($roundcube_version, '1.2.0', '>=')) {
@@ -183,7 +181,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
             // run post-update script
             if (!empty($extra['roundcube']['post-update-script'])) {
-                $self->rcubeRunScript($extra['roundcube']['post-update-script'], $target);
+                $this->rcubeRunScript($extra['roundcube']['post-update-script'], $target);
             }
         };
 
@@ -209,27 +207,26 @@ abstract class ExtensionInstaller extends LibraryInstaller
         }
         require_once INSTALL_PATH . 'program/include/iniset.php';
 
-        $self   = $this;
-        $config = $self->composer->getConfig()->get('roundcube');
+        $config = $this->composer->getConfig()->get('roundcube');
 
-        $postUninstall = function() use ($self, $package, $config) {
+        $postUninstall = function() use ($package, $config) {
             // post-uninstall: deactivate package
-            $package_name = $self->getPackageName($package);
-            $package_dir  = $self->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
+            $package_name = $this->getPackageName($package);
+            $package_dir  = $this->getVendorDir() . DIRECTORY_SEPARATOR . $package_name;
 
-            $self->rcubeAlterConfig($package_name, false);
+            $this->rcubeAlterConfig($package_name, false);
 
             // run post-uninstall script
             $extra = $package->getExtra();
             if (!empty($extra['roundcube']['post-uninstall-script'])) {
-                $self->rcubeRunScript($extra['roundcube']['post-uninstall-script'], $package);
+                $this->rcubeRunScript($extra['roundcube']['post-uninstall-script'], $package);
             }
 
             // remove package folder
             if (!empty($config['uninstall-remove-folder'])) {
                 $fs = new Filesystem();
                 $fs->remove($package_dir);
-                $self->io->write("<info>Removed $package_name files</info>");
+                $this->io->write("<info>Removed $package_name files</info>");
             }
         };
 

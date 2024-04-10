@@ -2,21 +2,13 @@
 
 namespace Roundcube\Composer;
 
-/**
- * @category Plugins
- * @package  PluginInstaller
- * @author   Philip Weir <roundcube@tehinterweb.co.uk>
- * @license  GPL-3.0+
- * @version  GIT: <git_id>
- * @link     https://github.com/roundcube/plugin-installer
- */
 class SkinInstaller extends ExtensionInstaller
 {
     protected $composer_type = 'roundcube-skin';
 
     public function getVendorDir()
     {
-        return $this->getRoundcubemailInstallPath() . DIRECTORY_SEPARATOR . 'skins';
+        return $this->getRoundcubemailInstallPath() . \DIRECTORY_SEPARATOR . 'skins';
     }
 
     protected function confirmInstall($package_name)
@@ -25,9 +17,8 @@ class SkinInstaller extends ExtensionInstaller
 
         if (isset($config['enable-skin'])) {
             $answer = $config['enable-skin'];
-        }
-        else {
-            $answer = $this->io->askConfirmation("Do you want to activate the skin $package_name? [Y|n] ", true);
+        } else {
+            $answer = $this->io->askConfirmation("Do you want to activate the skin {$package_name}? [Y|n] ", true);
         }
 
         return $answer;
@@ -40,16 +31,14 @@ class SkinInstaller extends ExtensionInstaller
 
         if ($add && $new_config !== $package_name) {
             $new_config = $package_name;
-        }
-        elseif (!$add && $new_config === $package_name) {
+        } elseif (!$add && $new_config === $package_name) {
             $new_config = null;
         }
 
         if ($new_config !== $cur_config) {
-            $config_val = !empty($new_config) ? "'$new_config';" : null;
+            $config_val = !empty($new_config) ? "'{$new_config}';" : null;
             $result = ['skin', $config_val];
-        }
-        else {
+        } else {
             $result = false;
         }
 

@@ -2,21 +2,13 @@
 
 namespace Roundcube\Composer;
 
-/**
- * @category Plugins
- * @package  PluginInstaller
- * @author   Philip Weir <roundcube@tehinterweb.co.uk>
- * @license  GPL-3.0+
- * @version  GIT: <git_id>
- * @link     https://github.com/roundcube/plugin-installer
- */
 class PluginInstaller extends ExtensionInstaller
 {
     protected $composer_type = 'roundcube-plugin';
 
     public function getVendorDir()
     {
-        return $this->getRoundcubemailInstallPath() . DIRECTORY_SEPARATOR . 'plugins';
+        return $this->getRoundcubemailInstallPath() . \DIRECTORY_SEPARATOR . 'plugins';
     }
 
     protected function confirmInstall($package_name)
@@ -25,31 +17,28 @@ class PluginInstaller extends ExtensionInstaller
 
         if (isset($config['enable-plugin'])) {
             $answer = $config['enable-plugin'];
-        }
-        else {
-            $answer = $this->io->askConfirmation("Do you want to activate the plugin $package_name? [Y|n] ", true);
+        } else {
+            $answer = $this->io->askConfirmation("Do you want to activate the plugin {$package_name}? [Y|n] ", true);
         }
 
         return $answer;
     }
 
-    protected function getConfig($package_name, $config, $add )
+    protected function getConfig($package_name, $config, $add)
     {
         $cur_config = !empty($config['plugins']) ? ((array) $config['plugins']) : [];
         $new_config = $cur_config;
 
         if ($add && !in_array($package_name, $new_config, true)) {
             $new_config[] = $package_name;
-        }
-        elseif (!$add && ($i = array_search($package_name, $new_config, true)) !== false) {
+        } elseif (!$add && ($i = array_search($package_name, $new_config, true)) !== false) {
             unset($new_config[$i]);
         }
 
         if ($new_config !== $cur_config) {
-            $config_val = count($new_config) > 0 ? "[\n\t'" . join("',\n\t'", $new_config) . "',\n];" : "[];";
+            $config_val = count($new_config) > 0 ? "[\n\t'" . implode("',\n\t'", $new_config) . "',\n];" : '[];';
             $result = ['plugins', $config_val];
-        }
-        else {
+        } else {
             $result = false;
         }
 

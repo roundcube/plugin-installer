@@ -15,7 +15,7 @@ This installer ensures that plugins and skins end up in the correct directory:
     {
         "name": "<your-vendor-name>/<plugin-name>",
         "type": "roundcube-plugin",
-        "license": "GPL-3.0+",
+        "license": "GPL-3.0-or-later",
         "require": {
             "roundcube/plugin-installer": ">=0.3.0"
         }
@@ -26,7 +26,7 @@ This installer ensures that plugins and skins end up in the correct directory:
     {
         "name": "<your-vendor-name>/<skin-name>",
         "type": "roundcube-skin",
-        "license": "GPL-3.0+",
+        "license": "GPL-3.0-or-later",
         "require": {
             "roundcube/plugin-installer": ">=0.3.0"
         }

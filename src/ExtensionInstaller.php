@@ -61,16 +61,19 @@ abstract class ExtensionInstaller extends LibraryInstaller
             . str_replace('/', \DIRECTORY_SEPARATOR, $this->getPackageName($package));
     }
 
-    public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
+    private function initializeRoundcubemailEnvironment(): void
     {
-        $this->setRoundcubemailInstallPath($repo);
-
         // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
         }
         require_once INSTALL_PATH . 'program/include/iniset.php';
+    }
 
+    public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
+    {
+        $this->setRoundcubemailInstallPath($repo);
+        $this->initializeRoundcubemailEnvironment();
         $this->rcubeVersionCheck($package);
 
         $postInstall = function () use ($package) {
@@ -136,13 +139,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
     {
         $this->setRoundcubemailInstallPath($repo);
-
-        // initialize Roundcube environment
-        if (!defined('INSTALL_PATH')) {
-            define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
-        }
-        require_once INSTALL_PATH . 'program/include/iniset.php';
-
+        $this->initializeRoundcubemailEnvironment();
         $this->rcubeVersionCheck($target);
 
         $extra = $target->getExtra();
@@ -212,12 +209,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $this->setRoundcubemailInstallPath($repo);
-
-        // initialize Roundcube environment
-        if (!defined('INSTALL_PATH')) {
-            define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
-        }
-        require_once INSTALL_PATH . 'program/include/iniset.php';
+        $this->initializeRoundcubemailEnvironment();
 
         $config = $this->composer->getConfig()->get('roundcube');
 

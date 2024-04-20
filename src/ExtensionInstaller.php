@@ -5,34 +5,48 @@ namespace Roundcube\Composer;
 use Composer\Installer\LibraryInstaller;
 use Composer\Package\PackageInterface;
 use Composer\Package\Version\VersionParser;
+use Composer\Repository\InstalledRepository;
 use Composer\Repository\InstalledRepositoryInterface;
+use Composer\Repository\RootPackageRepository;
 use Composer\Util\Filesystem;
 use Composer\Util\ProcessExecutor;
 use React\Promise\PromiseInterface;
 
 abstract class ExtensionInstaller extends LibraryInstaller
 {
+    private $roundcubemailInstallPath;
+
     protected $composer_type;
+
+    protected function setRoundcubemailInstallPath(InstalledRepositoryInterface $installedRepo): void
+    {
+        // https://github.com/composer/composer/discussions/11927#discussioncomment-9116893
+        $rootPackage = clone $this->composer->getPackage();
+        $installedRepo = new InstalledRepository([
+            $installedRepo,
+            new RootPackageRepository($rootPackage),
+        ]);
+
+        $roundcubemailPackages = $installedRepo->findPackagesWithReplacersAndProviders('roundcube/roundcubemail');
+        assert(count($roundcubemailPackages) === 1);
+        $roundcubemailPackage = $roundcubemailPackages[0];
+
+        if ($roundcubemailPackage === $rootPackage) { // $this->getInstallPath($package) does not work for root package
+            $this->initializeVendorDir();
+            $this->roundcubemailInstallPath = dirname($this->vendorDir);
+        } else {
+            $this->roundcubemailInstallPath = $this->getInstallPath($roundcubemailPackage);
+        }
+    }
 
     protected function getRoundcubemailInstallPath(): string
     {
-        $rootPackage = $this->composer->getPackage();
-        if ($rootPackage->getName() === 'roundcube/roundcubemail') {
-            $this->initializeVendorDir();
-
-            return dirname($this->vendorDir);
-        }
-
-        $roundcubemailPackage = $this->composer
-            ->getRepositoryManager()
-            ->findPackage('roundcube/roundcubemail', '*');
-
-        return $this->getInstallPath($roundcubemailPackage);
+        return $this->roundcubemailInstallPath;
     }
 
     public function getInstallPath(PackageInterface $package)
     {
-        if (!$this->supports($package->getType())) {
+        if (!$this->supports($package->getType()) || $this->roundcubemailInstallPath === null /* install path is not known at download phase */) {
             return parent::getInstallPath($package);
         }
 
@@ -43,6 +57,8 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
+        $this->setRoundcubemailInstallPath($repo);
+
         // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
@@ -113,6 +129,8 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
     {
+        $this->setRoundcubemailInstallPath($repo);
+
         // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
@@ -186,6 +204,8 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
+        $this->setRoundcubemailInstallPath($repo);
+
         // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');

@@ -14,8 +14,10 @@ use React\Promise\PromiseInterface;
 
 abstract class ExtensionInstaller extends LibraryInstaller
 {
+    /** @var string|null */
     private $roundcubemailInstallPath;
 
+    /** @var string */
     protected $composer_type;
 
     protected function setRoundcubemailInstallPath(InstalledRepositoryInterface $installedRepo): void
@@ -46,13 +48,17 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
     public function getInstallPath(PackageInterface $package)
     {
-        if (!$this->supports($package->getType()) || $this->roundcubemailInstallPath === null /* install path is not known at download phase */) {
+        if (
+            !$this->supports($package->getType())
+            || $this->roundcubemailInstallPath === null // install path is not known at download phase
+        ) {
             return parent::getInstallPath($package);
         }
 
         $vendorDir = $this->getVendorDir();
 
-        return sprintf('%s/%s', $vendorDir, $this->getPackageName($package));
+        return $vendorDir . \DIRECTORY_SEPARATOR
+            . str_replace('/', \DIRECTORY_SEPARATOR, $this->getPackageName($package));
     }
 
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
@@ -70,7 +76,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         $postInstall = function () use ($package) {
             $config_file = $this->rcubeConfigFile();
             $package_name = $this->getPackageName($package);
-            $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+            $package_dir = $this->getInstallPath($package);
             $extra = $package->getExtra();
 
             if (is_writable($config_file) && \PHP_SAPI === 'cli' && $this->confirmInstall($package_name)) {
@@ -143,8 +149,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         $fs = new Filesystem();
 
         // backup persistent files e.g. config.inc.php
-        $package_name = $this->getPackageName($initial);
-        $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+        $package_dir = $this->getInstallPath($initial);
         $temp_dir = $package_dir . '-' . sprintf('%010d%010d', mt_rand(), mt_rand());
 
         // make a backup of existing files (for restoring persistent files)
@@ -152,7 +157,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
         $postUpdate = function () use ($target, $extra, $fs, $temp_dir) {
             $package_name = $this->getPackageName($target);
-            $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+            $package_dir = $this->getInstallPath($target);
 
             // restore persistent files
             $persistent_files = !empty($extra['roundcube']['persistent-files']) ? $extra['roundcube']['persistent-files'] : ['config.inc.php'];
@@ -217,7 +222,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         $postUninstall = function () use ($package, $config) {
             // post-uninstall: deactivate package
             $package_name = $this->getPackageName($package);
-            $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+            $package_dir = $this->getInstallPath($package);
 
             $this->rcubeAlterConfig($package_name, false);
 
@@ -400,7 +405,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
     {
         $package_name = $this->getPackageName($package);
         $package_type = $package->getType();
-        $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+        $package_dir = $this->getInstallPath($package);
 
         // check for executable shell script
         if (($scriptfile = realpath($package_dir . \DIRECTORY_SEPARATOR . $script)) && is_executable($scriptfile)) {
@@ -424,7 +429,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
     }
 
     /**
-     * normalize Roundcube version string.
+     * Normalize Roundcube version string.
      */
     private static function versionNormalize(string $version): string
     {

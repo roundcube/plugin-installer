@@ -108,12 +108,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
                 if ($sqldir = realpath($package_dir . \DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                     $this->io->write("<info>Running database initialization script for {$package_name}</info>");
 
-                    $roundcube_version = self::versionNormalize(RCMAIL_VERSION);
-                    if (self::versionCompare($roundcube_version, '1.2.0', '>=')) {
-                        \rcmail_utils::db_init($sqldir);
-                    } else {
-                        throw new \Exception('Database initialization failed. Roundcube 1.2.0 or above required.');
-                    }
+                    \rcmail_utils::db_init($sqldir);
                 }
             }
 
@@ -178,12 +173,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
                 if ($sqldir = realpath($package_dir . \DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                     $this->io->write("<info>Updating database schema for {$package_name}</info>");
 
-                    $roundcube_version = self::versionNormalize(RCMAIL_VERSION);
-                    if (self::versionCompare($roundcube_version, '1.2.0', '>=')) {
-                        \rcmail_utils::db_update($sqldir, $package_name);
-                    } else {
-                        throw new \Exception('Database update failed. Roundcube 1.2.0 or above required.');
-                    }
+                    \rcmail_utils::db_update($sqldir, $package_name);
                 }
             }
 

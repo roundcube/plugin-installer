@@ -16,4 +16,4 @@ parameters:
         -
             message: '~^Constant RCMAIL_VERSION not found\.$~'
             path: 'src/ExtensionInstaller.php'
-            count: 3
+            count: 1

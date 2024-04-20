@@ -160,7 +160,9 @@ abstract class ExtensionInstaller extends LibraryInstaller
             $package_dir = $this->getInstallPath($target);
 
             // restore persistent files
-            $persistent_files = !empty($extra['roundcube']['persistent-files']) ? $extra['roundcube']['persistent-files'] : ['config.inc.php'];
+            $persistent_files = !empty($extra['roundcube']['persistent-files'])
+                ? $extra['roundcube']['persistent-files']
+                : ['config.inc.php'];
             foreach ($persistent_files as $file) {
                 $path = $temp_dir . \DIRECTORY_SEPARATOR . $file;
                 if (is_readable($path)) {

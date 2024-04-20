@@ -26,7 +26,9 @@ class SkinInstaller extends ExtensionInstaller
 
     protected function getConfig($package_name, $config, $add)
     {
-        $cur_config = !empty($config['skin']) ? $config['skin'] : null;
+        $cur_config = !empty($config['skin'])
+            ? $config['skin']
+            : null;
         $new_config = $cur_config;
 
         if ($add && $new_config !== $package_name) {
@@ -36,7 +38,9 @@ class SkinInstaller extends ExtensionInstaller
         }
 
         if ($new_config !== $cur_config) {
-            $config_val = !empty($new_config) ? "'{$new_config}';" : null;
+            $config_val = !empty($new_config)
+                ? "'{$new_config}';"
+                : null;
             $result = ['skin', $config_val];
         } else {
             $result = false;

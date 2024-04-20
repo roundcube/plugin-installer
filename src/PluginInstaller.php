@@ -26,7 +26,9 @@ class PluginInstaller extends ExtensionInstaller
 
     protected function getConfig($package_name, $config, $add)
     {
-        $cur_config = !empty($config['plugins']) ? ((array) $config['plugins']) : [];
+        $cur_config = !empty($config['plugins'])
+            ? ((array) $config['plugins'])
+            : [];
         $new_config = $cur_config;
 
         if ($add && !in_array($package_name, $new_config, true)) {
@@ -36,7 +38,9 @@ class PluginInstaller extends ExtensionInstaller
         }
 
         if ($new_config !== $cur_config) {
-            $config_val = count($new_config) > 0 ? "[\n\t'" . implode("',\n\t'", $new_config) . "',\n];" : '[];';
+            $config_val = count($new_config) > 0
+                ? "[\n\t'" . implode("',\n\t'", $new_config) . "',\n];"
+                : '[];';
             $result = ['plugins', $config_val];
         } else {
             $result = false;

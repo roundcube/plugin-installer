@@ -96,7 +96,7 @@ jobs:
       - name: Test - install plugin
         run: |
           cd test-composer
-          composer install --prefer-dist --no-interaction --no-progress
+          composer install -v --prefer-dist --no-interaction --no-progress
 
       - name: Test - verify install
         run: |

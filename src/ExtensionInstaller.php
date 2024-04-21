@@ -5,56 +5,81 @@ namespace Roundcube\Composer;
 use Composer\Installer\LibraryInstaller;
 use Composer\Package\PackageInterface;
 use Composer\Package\Version\VersionParser;
+use Composer\Repository\InstalledRepository;
 use Composer\Repository\InstalledRepositoryInterface;
+use Composer\Repository\RootPackageRepository;
 use Composer\Util\Filesystem;
 use Composer\Util\ProcessExecutor;
 use React\Promise\PromiseInterface;
 
 abstract class ExtensionInstaller extends LibraryInstaller
 {
+    /** @var string|null */
+    private $roundcubemailInstallPath;
+
+    /** @var string */
     protected $composer_type;
+
+    protected function setRoundcubemailInstallPath(InstalledRepositoryInterface $installedRepo): void
+    {
+        // https://github.com/composer/composer/discussions/11927#discussioncomment-9116893
+        $rootPackage = clone $this->composer->getPackage();
+        $installedRepo = new InstalledRepository([
+            $installedRepo,
+            new RootPackageRepository($rootPackage),
+        ]);
+
+        $roundcubemailPackages = $installedRepo->findPackagesWithReplacersAndProviders('roundcube/roundcubemail');
+        assert(count($roundcubemailPackages) === 1);
+        $roundcubemailPackage = $roundcubemailPackages[0];
+
+        if ($roundcubemailPackage === $rootPackage) { // $this->getInstallPath($package) does not work for root package
+            $this->initializeVendorDir();
+            $this->roundcubemailInstallPath = dirname($this->vendorDir);
+        } else {
+            $this->roundcubemailInstallPath = $this->getInstallPath($roundcubemailPackage);
+        }
+    }
 
     protected function getRoundcubemailInstallPath(): string
     {
-        $rootPackage = $this->composer->getPackage();
-        if ($rootPackage->getName() === 'roundcube/roundcubemail') {
-            $this->initializeVendorDir();
-
-            return dirname($this->vendorDir);
-        }
-
-        $roundcubemailPackage = $this->composer
-            ->getRepositoryManager()
-            ->findPackage('roundcube/roundcubemail', '*');
-
-        return $this->getInstallPath($roundcubemailPackage);
+        return $this->roundcubemailInstallPath;
     }
 
     public function getInstallPath(PackageInterface $package)
     {
-        if (!$this->supports($package->getType())) {
+        if (
+            !$this->supports($package->getType())
+            || $this->roundcubemailInstallPath === null // install path is not known at download phase
+        ) {
             return parent::getInstallPath($package);
         }
 
         $vendorDir = $this->getVendorDir();
 
-        return sprintf('%s/%s', $vendorDir, $this->getPackageName($package));
+        return $vendorDir . \DIRECTORY_SEPARATOR
+            . str_replace('/', \DIRECTORY_SEPARATOR, $this->getPackageName($package));
     }
 
-    public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
+    private function initializeRoundcubemailEnvironment(): void
     {
         // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
         }
         require_once INSTALL_PATH . 'program/include/iniset.php';
+    }
 
+    public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
+    {
+        $this->setRoundcubemailInstallPath($repo);
+        $this->initializeRoundcubemailEnvironment();
         $this->rcubeVersionCheck($package);
 
         $postInstall = function () use ($package) {
             $config_file = $this->rcubeConfigFile();
             $package_name = $this->getPackageName($package);
-            $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+            $package_dir = $this->getInstallPath($package);
             $extra = $package->getExtra();
 
             if (is_writable($config_file) && \PHP_SAPI === 'cli' && $this->confirmInstall($package_name)) {
@@ -83,12 +108,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
                 if ($sqldir = realpath($package_dir . \DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                     $this->io->write("<info>Running database initialization script for {$package_name}</info>");
 
-                    $roundcube_version = self::versionNormalize(RCMAIL_VERSION);
-                    if (self::versionCompare($roundcube_version, '1.2.0', '>=')) {
-                        \rcmail_utils::db_init($sqldir);
-                    } else {
-                        throw new \Exception('Database initialization failed. Roundcube 1.2.0 or above required.');
-                    }
+                    \rcmail_utils::db_init($sqldir);
                 }
             }
 
@@ -113,20 +133,15 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
     {
-        // initialize Roundcube environment
-        if (!defined('INSTALL_PATH')) {
-            define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
-        }
-        require_once INSTALL_PATH . 'program/include/iniset.php';
-
+        $this->setRoundcubemailInstallPath($repo);
+        $this->initializeRoundcubemailEnvironment();
         $this->rcubeVersionCheck($target);
 
         $extra = $target->getExtra();
         $fs = new Filesystem();
 
         // backup persistent files e.g. config.inc.php
-        $package_name = $this->getPackageName($initial);
-        $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+        $package_dir = $this->getInstallPath($initial);
         $temp_dir = $package_dir . '-' . sprintf('%010d%010d', mt_rand(), mt_rand());
 
         // make a backup of existing files (for restoring persistent files)
@@ -134,10 +149,12 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
         $postUpdate = function () use ($target, $extra, $fs, $temp_dir) {
             $package_name = $this->getPackageName($target);
-            $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+            $package_dir = $this->getInstallPath($target);
 
             // restore persistent files
-            $persistent_files = !empty($extra['roundcube']['persistent-files']) ? $extra['roundcube']['persistent-files'] : ['config.inc.php'];
+            $persistent_files = !empty($extra['roundcube']['persistent-files'])
+                ? $extra['roundcube']['persistent-files']
+                : ['config.inc.php'];
             foreach ($persistent_files as $file) {
                 $path = $temp_dir . \DIRECTORY_SEPARATOR . $file;
                 if (is_readable($path)) {
@@ -156,12 +173,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
                 if ($sqldir = realpath($package_dir . \DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                     $this->io->write("<info>Updating database schema for {$package_name}</info>");
 
-                    $roundcube_version = self::versionNormalize(RCMAIL_VERSION);
-                    if (self::versionCompare($roundcube_version, '1.2.0', '>=')) {
-                        \rcmail_utils::db_update($sqldir, $package_name);
-                    } else {
-                        throw new \Exception('Database update failed. Roundcube 1.2.0 or above required.');
-                    }
+                    \rcmail_utils::db_update($sqldir, $package_name);
                 }
             }
 
@@ -186,18 +198,15 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
-        // initialize Roundcube environment
-        if (!defined('INSTALL_PATH')) {
-            define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
-        }
-        require_once INSTALL_PATH . 'program/include/iniset.php';
+        $this->setRoundcubemailInstallPath($repo);
+        $this->initializeRoundcubemailEnvironment();
 
         $config = $this->composer->getConfig()->get('roundcube');
 
         $postUninstall = function () use ($package, $config) {
             // post-uninstall: deactivate package
             $package_name = $this->getPackageName($package);
-            $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+            $package_dir = $this->getInstallPath($package);
 
             $this->rcubeAlterConfig($package_name, false);
 
@@ -380,7 +389,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
     {
         $package_name = $this->getPackageName($package);
         $package_type = $package->getType();
-        $package_dir = $this->getVendorDir() . \DIRECTORY_SEPARATOR . $package_name;
+        $package_dir = $this->getInstallPath($package);
 
         // check for executable shell script
         if (($scriptfile = realpath($package_dir . \DIRECTORY_SEPARATOR . $script)) && is_executable($scriptfile)) {
@@ -404,7 +413,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
     }
 
     /**
-     * normalize Roundcube version string.
+     * Normalize Roundcube version string.
      */
     private static function versionNormalize(string $version): string
     {

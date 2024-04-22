@@ -93,13 +93,26 @@ jobs:
       - name: Set COMPOSER_ROOT_VERSION
         run: echo "COMPOSER_ROOT_VERSION=0.3.99" >> $GITHUB_ENV
 
-      - name: Test - install plugin
+      - name: Test Roundcubemail as dependency - install plugin
         run: |
           cd test-composer
-          composer install --prefer-dist --no-interaction --no-progress
+          composer install -v --prefer-dist --no-interaction --no-progress
 
-      - name: Test - verify install
+      - name: Test Roundcubemail as dependency - verify install
         run: |
           cd test-composer
-          ls -lah vendor/roundcube/roundcubemail/plugins/carddav
-          ls -lah vendor/roundcube/roundcubemail/plugins/carddav/config.inc.php
+          ls -lah vendor/roundcube/roundcubemail/plugins/carddav/config.*
+          if [ ! -f vendor/roundcube/roundcubemail/plugins/carddav/config.inc.php ]; then echo 'Config file was not created' && exit 1; fi
+
+      - name: Test Roundcubemail as root project - install plugin
+        run: |
+          cd test-composer/vendor/roundcube/roundcubemail
+          ls -lah plugins/acl/config.*
+          if [ -f plugins/acl/config.inc.php ]; then echo 'Config file is not expected' && exit 1; fi
+          composer install -v --prefer-dist --no-interaction --no-progress
+
+      - name: Test Roundcubemail as root project - verify install
+        run: |
+          cd test-composer/vendor/roundcube/roundcubemail
+          ls -lah plugins/acl/config.*
+          if [ ! -f plugins/acl/config.inc.php ]; then echo 'Config file was not created' && exit 1; fi

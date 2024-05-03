@@ -19,11 +19,11 @@
     ],
     "require": {
         "php": ">=7.3 <8.4",
-        "composer-plugin-api": "^1.0 || ^2.0",
+        "composer-plugin-api": "^2.1",
         "roundcube/roundcubemail": "*"
     },
     "require-dev": {
-        "composer/composer": "^2.0",
+        "composer/composer": "^2.1",
         "ergebnis/composer-normalize": "^2.13",
         "friendsofphp/php-cs-fixer": "^3.0",
         "phpstan/extension-installer": "^1.1",

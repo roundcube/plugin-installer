@@ -116,3 +116,16 @@ jobs:
           cd test-composer/vendor/roundcube/roundcubemail
           ls -lah plugins/acl/config.*
           if [ ! -f plugins/acl/config.inc.php ]; then echo 'Config file was not created' && exit 1; fi
+
+      - name: Test update - install plugin
+        run: |
+          cd test-composer
+          echo '// xxx no config update xxx' >> vendor/roundcube/roundcubemail/plugins/carddav/config.inc.php
+          composer update -v --prefer-dist --no-interaction --no-progress roundcube/carddav --prefer-lowest
+
+      - name: Test update - verify install
+        run: |
+          cd test-composer
+          ls -lah vendor/roundcube/roundcubemail/plugins/carddav/config.*
+          if [ ! -f vendor/roundcube/roundcubemail/plugins/carddav/config.inc.php ]; then echo 'Config file was deleted' && exit 1; fi
+          if ! grep -Fq 'xxx no config update xxx' vendor/roundcube/roundcubemail/plugins/carddav/config.inc.php; then echo 'Config file was replaced' && exit 1; fi

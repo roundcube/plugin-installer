@@ -63,11 +63,17 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
     private function initializeRoundcubemailEnvironment(): void
     {
-        // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
         }
         require_once INSTALL_PATH . 'program/include/iniset.php';
+    }
+
+    public function isInstalled(InstalledRepositoryInterface $repo, PackageInterface $package)
+    {
+        $this->setRoundcubemailInstallPath($repo);
+
+        return parent::isInstalled($repo, $package);
     }
 
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)

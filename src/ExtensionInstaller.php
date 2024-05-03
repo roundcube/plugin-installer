@@ -36,9 +36,15 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
         if ($roundcubemailPackage === $rootPackage) { // $this->getInstallPath($package) does not work for root package
             $this->initializeVendorDir();
-            $this->roundcubemailInstallPath = dirname($this->vendorDir);
+            $installPath = dirname($this->vendorDir);
         } else {
-            $this->roundcubemailInstallPath = $this->getInstallPath($roundcubemailPackage);
+            $installPath = $this->getInstallPath($roundcubemailPackage);
+        }
+
+        if ($this->roundcubemailInstallPath === null) {
+            $this->roundcubemailInstallPath = $installPath;
+        } elseif ($this->roundcubemailInstallPath !== $installPath) {
+            throw new \Exception('Install path of "roundcube/roundcubemail" package has unexpectedly changed');
         }
     }
 

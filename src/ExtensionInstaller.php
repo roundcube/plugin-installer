@@ -67,6 +67,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         return $this->roundcubemailInstallPath;
     }
 
+    #[\Override]
     public function getInstallPath(PackageInterface $package)
     {
         if (!$this->supports($package->getType())) {
@@ -87,6 +88,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         require_once INSTALL_PATH . 'program/include/iniset.php';
     }
 
+    #[\Override]
     public function isInstalled(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $this->setRoundcubemailInstallPath($repo);
@@ -94,6 +96,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         return parent::isInstalled($repo, $package);
     }
 
+    #[\Override]
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $this->setRoundcubemailInstallPath($repo);
@@ -155,6 +158,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         return null;
     }
 
+    #[\Override]
     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
     {
         $this->setRoundcubemailInstallPath($repo);
@@ -220,6 +224,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         return null;
     }
 
+    #[\Override]
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $this->setRoundcubemailInstallPath($repo);
@@ -261,6 +266,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         return null;
     }
 
+    #[\Override]
     public function supports($packageType)
     {
         return $packageType === $this->composer_type;

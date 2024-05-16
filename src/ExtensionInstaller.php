@@ -2,6 +2,7 @@
 
 namespace Roundcube\Composer;
 
+use Composer\Installer\InstallationManager;
 use Composer\Installer\LibraryInstaller;
 use Composer\Package\PackageInterface;
 use Composer\Package\Version\VersionParser;
@@ -35,23 +36,41 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
         if ($roundcubemailPackage === $rootPackage) { // $this->getInstallPath($package) does not work for root package
             $this->initializeVendorDir();
-            $this->roundcubemailInstallPath = dirname($this->vendorDir);
+            $installPath = dirname($this->vendorDir);
         } else {
-            $this->roundcubemailInstallPath = $this->getInstallPath($roundcubemailPackage);
+            $installPath = $this->getInstallPath($roundcubemailPackage);
+        }
+
+        if ($this->roundcubemailInstallPath === null) {
+            $this->roundcubemailInstallPath = $installPath;
+        } elseif ($this->roundcubemailInstallPath !== $installPath) {
+            throw new \Exception('Install path of "roundcube/roundcubemail" package has unexpectedly changed');
         }
     }
 
     protected function getRoundcubemailInstallPath(): string
     {
+        // install path is not set at composer download phase
+        // never assume any path, but for this known composer behaviour get it from backtrace instead
+        if ($this->roundcubemailInstallPath === null) {
+            $backtrace = debug_backtrace();
+            foreach ($backtrace as $frame) {
+                // relies on https://github.com/composer/composer/blob/2.7.4/src/Composer/Installer/InstallationManager.php#L243
+                if (($frame['object'] ?? null) instanceof InstallationManager
+                    && $frame['function'] === 'downloadAndExecuteBatch'
+                ) {
+                    $this->setRoundcubemailInstallPath($frame['args'][0]);
+                }
+            }
+        }
+
         return $this->roundcubemailInstallPath;
     }
 
+    #[\Override]
     public function getInstallPath(PackageInterface $package)
     {
-        if (
-            !$this->supports($package->getType())
-            || $this->roundcubemailInstallPath === null // install path is not known at download phase
-        ) {
+        if (!$this->supports($package->getType())) {
             return parent::getInstallPath($package);
         }
 
@@ -63,13 +82,21 @@ abstract class ExtensionInstaller extends LibraryInstaller
 
     private function initializeRoundcubemailEnvironment(): void
     {
-        // initialize Roundcube environment
         if (!defined('INSTALL_PATH')) {
             define('INSTALL_PATH', $this->getRoundcubemailInstallPath() . '/');
         }
         require_once INSTALL_PATH . 'program/include/iniset.php';
     }
 
+    #[\Override]
+    public function isInstalled(InstalledRepositoryInterface $repo, PackageInterface $package)
+    {
+        $this->setRoundcubemailInstallPath($repo);
+
+        return parent::isInstalled($repo, $package);
+    }
+
+    #[\Override]
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $this->setRoundcubemailInstallPath($repo);
@@ -131,6 +158,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         return null;
     }
 
+    #[\Override]
     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
     {
         $this->setRoundcubemailInstallPath($repo);
@@ -196,6 +224,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         return null;
     }
 
+    #[\Override]
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $this->setRoundcubemailInstallPath($repo);
@@ -237,6 +266,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
         return null;
     }
 
+    #[\Override]
     public function supports($packageType)
     {
         return $packageType === $this->composer_type;

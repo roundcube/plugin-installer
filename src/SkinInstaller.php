@@ -6,11 +6,13 @@ class SkinInstaller extends ExtensionInstaller
 {
     protected $composer_type = 'roundcube-skin';
 
+    #[\Override]
     public function getVendorDir()
     {
         return $this->getRoundcubemailInstallPath() . \DIRECTORY_SEPARATOR . 'skins';
     }
 
+    #[\Override]
     protected function confirmInstall($package_name)
     {
         $config = $this->composer->getConfig()->get('roundcube');
@@ -24,6 +26,7 @@ class SkinInstaller extends ExtensionInstaller
         return $answer;
     }
 
+    #[\Override]
     protected function getConfig($package_name, $config, $add)
     {
         $cur_config = !empty($config['skin'])

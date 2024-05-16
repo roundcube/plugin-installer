@@ -11,6 +11,7 @@ class RoundcubeInstaller implements PluginInterface
     private $extentions = [PluginInstaller::class, SkinInstaller::class];
     private $installers = [];
 
+    #[\Override]
     public function activate(Composer $composer, IOInterface $io)
     {
         foreach ($this->extentions as $extension) {
@@ -20,6 +21,7 @@ class RoundcubeInstaller implements PluginInterface
         }
     }
 
+    #[\Override]
     public function deactivate(Composer $composer, IOInterface $io)
     {
         foreach ($this->installers as $installer) {
@@ -27,5 +29,6 @@ class RoundcubeInstaller implements PluginInterface
         }
     }
 
+    #[\Override]
     public function uninstall(Composer $composer, IOInterface $io) {}
 }

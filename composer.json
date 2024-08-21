@@ -18,7 +18,7 @@
         }
     ],
     "require": {
-        "php": ">=7.3 <8.4",
+        "php": ">=7.3 <=8.4",
         "composer-plugin-api": "^2.1",
         "roundcube/roundcubemail": "*"
     },

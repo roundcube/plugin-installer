@@ -348,7 +348,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
                 } else {
                     $new_config = preg_replace(
                         "/(\\{$varname}\\['{$config_name}'\\])\\s+=\\s+(.+);/Uims",
-                        '\\1 = ' . $config_val,
+                        '\1 = ' . $config_val,
                         $config_template,
                         -1,
                         $count

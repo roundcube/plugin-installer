@@ -131,7 +131,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
             }
 
             // initialize database schema
-            if (!empty($extra['roundcube']['sql-dir'])) {
+            if (!empty($extra['roundcube']['sql-dir']) && !getenv('SKIP_DB_INIT')) {
                 if ($sqldir = realpath($package_dir . \DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                     $this->io->write("<info>Running database initialization script for {$package_name}</info>");
 
@@ -197,7 +197,7 @@ abstract class ExtensionInstaller extends LibraryInstaller
             $fs->remove($temp_dir);
 
             // update database schema
-            if (!empty($extra['roundcube']['sql-dir'])) {
+            if (!empty($extra['roundcube']['sql-dir']) && !getenv('SKIP_DB_UPDATE')) {
                 if ($sqldir = realpath($package_dir . \DIRECTORY_SEPARATOR . $extra['roundcube']['sql-dir'])) {
                     $this->io->write("<info>Updating database schema for {$package_name}</info>");
 

@@ -100,10 +100,11 @@ abstract class ExtensionInstaller extends LibraryInstaller
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $this->setRoundcubemailInstallPath($repo);
-        $this->initializeRoundcubemailEnvironment();
-        $this->rcubeVersionCheck($package);
 
         $postInstall = function () use ($package) {
+            $this->initializeRoundcubemailEnvironment();
+            $this->rcubeVersionCheck($package);
+
             $config_file = $this->rcubeConfigFile();
             $package_name = $this->getPackageName($package);
             $package_dir = $this->getInstallPath($package);
@@ -162,20 +163,21 @@ abstract class ExtensionInstaller extends LibraryInstaller
     public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
     {
         $this->setRoundcubemailInstallPath($repo);
-        $this->initializeRoundcubemailEnvironment();
-        $this->rcubeVersionCheck($target);
 
-        $extra = $target->getExtra();
-        $fs = new Filesystem();
+        $postUpdate = function () use ($initial, $target) {
+            $this->initializeRoundcubemailEnvironment();
+            $this->rcubeVersionCheck($target);
 
-        // backup persistent files e.g. config.inc.php
-        $package_dir = $this->getInstallPath($initial);
-        $temp_dir = $package_dir . '-' . sprintf('%010d%010d', mt_rand(), mt_rand());
+            $extra = $target->getExtra();
+            $fs = new Filesystem();
 
-        // make a backup of existing files (for restoring persistent files)
-        $fs->copy($package_dir, $temp_dir);
+            // backup persistent files e.g. config.inc.php
+            $package_dir = $this->getInstallPath($initial);
+            $temp_dir = $package_dir . '-' . sprintf('%010d%010d', mt_rand(), mt_rand());
 
-        $postUpdate = function () use ($target, $extra, $fs, $temp_dir) {
+            // make a backup of existing files (for restoring persistent files)
+            $fs->copy($package_dir, $temp_dir);
+
             $package_name = $this->getPackageName($target);
             $package_dir = $this->getInstallPath($target);
 
@@ -228,11 +230,12 @@ abstract class ExtensionInstaller extends LibraryInstaller
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $this->setRoundcubemailInstallPath($repo);
-        $this->initializeRoundcubemailEnvironment();
 
-        $config = $this->composer->getConfig()->get('roundcube');
+        $postUninstall = function () use ($package) {
+            $this->initializeRoundcubemailEnvironment();
 
-        $postUninstall = function () use ($package, $config) {
+            $config = $this->composer->getConfig()->get('roundcube');
+
             // post-uninstall: deactivate package
             $package_name = $this->getPackageName($package);
             $package_dir = $this->getInstallPath($package);

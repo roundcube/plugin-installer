@@ -1,4 +1,4 @@
-# Plugin Installer for Roundcube
+# repo Plugin Installer for Roundcube
 
 This installer ensures that plugins and skins end up in the correct directory:
 

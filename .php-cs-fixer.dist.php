@@ -58,7 +58,7 @@ return (new Config())
         // also prevent bounding of unwanted variables for GC
         'use_arrow_functions' => false,
 
-        // disable too destructive formating for now
+        // disable too destructive formatting for now
         'declare_strict_types' => false,
     ])
     ->setFinder($finder)

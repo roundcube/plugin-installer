@@ -8,13 +8,13 @@ use Composer\Plugin\PluginInterface;
 
 class RoundcubeInstaller implements PluginInterface
 {
-    private $extentions = [PluginInstaller::class, SkinInstaller::class];
+    private $extensions = [PluginInstaller::class, SkinInstaller::class];
     private $installers = [];
 
     #[\Override]
     public function activate(Composer $composer, IOInterface $io)
     {
-        foreach ($this->extentions as $extension) {
+        foreach ($this->extensions as $extension) {
             $installer = new $extension($io, $composer);
             $composer->getInstallationManager()->addInstaller($installer);
             $this->installers[] = $installer;
